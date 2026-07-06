@@ -1,0 +1,27 @@
+Options -Indexes
+AcceptPathInfo On
+DirectoryIndex frontend/index.php
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    RewriteRule ^api/?(.*)$ backend/public/index.php/api/$1 [END,QSA]
+
+    RewriteRule ^assets/(.*)$ frontend/assets/$1 [END]
+    RewriteRule ^views/(.*\.(js|css))$ frontend/views/$1 [END]
+    RewriteRule ^views(/|$) - [F,L]
+    RewriteRule ^$ frontend/index.php [END,QSA]
+    RewriteRule ^(admin|admin\.html|admin\.php|manage|manage\.html|manage\.php)(/.*)?$ frontend/index.php [END,QSA]
+
+    RewriteRule ^backend(/|$) - [F,L]
+    RewriteRule ^frontend(/|$) - [F,L]
+
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    RewriteRule ^.*$ frontend/index.php [END,QSA]
+</IfModule>
