@@ -138,7 +138,7 @@ createApp({
         });
 
         this.confirmedBooking = response.data;
-        this.manageUrl = `./manage?token=${encodeURIComponent(response.data.manage_token)}`;
+        this.manageUrl = response.manageUrl || `./manage?token=${encodeURIComponent(response.data.manage_token)}`;
         this.step = 4;
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } catch (error) {

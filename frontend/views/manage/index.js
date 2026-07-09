@@ -87,12 +87,8 @@ createApp({
 
       this.loadingSlots = true;
       try {
-        const slug = this.booking.business?.slug || window.App.config.businessSlug;
-        const params = new URLSearchParams({
-          service_id: this.booking.service_id,
-          date: this.newDate
-        });
-        const response = await api(`/businesses/${slug}/slots?${params}`);
+        const params = new URLSearchParams({ date: this.newDate });
+        const response = await api(`/bookings/${this.token}/slots?${params}`);
         this.slots = response.data || [];
       } catch (error) {
         this.toasts.error(`Nem sikerült az időpontokat betölteni: ${error.message}`);

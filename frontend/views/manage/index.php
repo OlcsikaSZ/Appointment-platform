@@ -47,6 +47,7 @@
             <dl>
               <div><dt>Vendég</dt><dd>{{ booking.customer_name }}</dd></div>
               <div><dt>Elérhetőség</dt><dd class="mono">{{ booking.customer_contact }}</dd></div>
+              <div v-if="booking.customer_note"><dt>Megjegyzés</dt><dd>{{ booking.customer_note }}</dd></div>
             </dl>
             <div class="perforation"></div>
             <dl>

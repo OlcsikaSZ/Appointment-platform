@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AdminBookingController;
+use App\Http\Controllers\Api\AdminServiceController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PublicBookingController;
 use Illuminate\Support\Facades\Route;
@@ -21,6 +22,15 @@ Route::prefix('v1')->group(function (): void {
     Route::middleware('auth:sanctum')->prefix('admin')->group(function (): void {
         Route::get('/businesses/{business}/bookings', [AdminBookingController::class, 'index']);
         Route::get('/businesses/{business}/summary', [AdminBookingController::class, 'summary']);
+        Route::get('/businesses/{business}/today', [AdminBookingController::class, 'today']);
+        Route::get('/businesses/{business}/calendar', [AdminBookingController::class, 'calendar']);
+        Route::get('/businesses/{business}/slots', [AdminBookingController::class, 'slots']);
+        Route::post('/businesses/{business}/bookings', [AdminBookingController::class, 'store']);
+        Route::get('/businesses/{business}/services', [AdminServiceController::class, 'index']);
+        Route::post('/businesses/{business}/services', [AdminServiceController::class, 'store']);
+        Route::patch('/services/{service}', [AdminServiceController::class, 'update']);
+        Route::delete('/services/{service}', [AdminServiceController::class, 'destroy']);
+        Route::post('/businesses/{business}/services/reorder', [AdminServiceController::class, 'reorder']);
         Route::get('/businesses/{business}/blocked-times', [AdminBookingController::class, 'blockedTimes']);
         Route::post('/businesses/{business}/blocked-times', [AdminBookingController::class, 'block']);
         Route::delete('/blocked-times/{blockedTime}', [AdminBookingController::class, 'destroyBlock']);
