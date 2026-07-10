@@ -61,6 +61,15 @@ createApp({
     },
     formValid() {
       return this.form.customer_name.length > 1 && this.form.customer_contact.length > 3;
+    },
+    phoneHref() {
+      return `tel:${String(this.business.phone || '').replace(/\s+/g, '')}`;
+    },
+    emailHref() {
+      return `mailto:${this.business.email || ''}`;
+    },
+    currentYear() {
+      return new Date().getFullYear();
     }
   },
 
@@ -68,6 +77,10 @@ createApp({
     try {
       const businessResponse = await api(`/businesses/${window.App.config.businessSlug}`);
       this.business = businessResponse.data || {};
+      document.title = `${this.business.name || 'Időpontfoglalás'} — Online foglalás`;
+
+      const description = document.querySelector('meta[name="description"]');
+      if (description && this.business.heroText) description.setAttribute('content', this.business.heroText);
 
       const serviceResponse = await api(`/businesses/${window.App.config.businessSlug}/services`);
       this.services = serviceResponse.data || [];
@@ -84,6 +97,20 @@ createApp({
     formatDateLong,
     isToday,
 
+    monogram(name) {
+      return String(name || '')
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0]?.toLocaleUpperCase('hu-HU') || '')
+        .join('');
+    },
+
+    serviceInitials(name) {
+      return this.monogram(name) || '•';
+    },
+
     async selectService(service) {
       this.selectedService = service;
       this.selectedSlot = null;
@@ -99,7 +126,7 @@ createApp({
       if (step === 3 && !this.selectedSlot) return;
       this.step = step;
       if (step === 2 && !this.slots.length) this.loadSlots();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: document.querySelector('#foglalas')?.offsetTop || 0, behavior: 'smooth' });
     },
 
     async loadSlots() {
@@ -109,10 +136,7 @@ createApp({
 
       this.loadingSlots = true;
       try {
-        const params = new URLSearchParams({
-          service_id: this.selectedService.id,
-          date: this.date
-        });
+        const params = new URLSearchParams({ service_id: this.selectedService.id, date: this.date });
         const response = await api(`/businesses/${window.App.config.businessSlug}/slots?${params}`);
         this.slots = response.data || [];
       } catch (error) {
@@ -152,7 +176,7 @@ createApp({
       if (!this.confirmedBooking) return;
       downloadIcs({
         title: `${this.confirmedBooking.service_name} – ${this.business.name || ''}`,
-        description: 'Foglalás az Időpontfoglalás rendszerén keresztül.',
+        description: `Foglalás: ${this.business.name || 'Időpontfoglalás'}.`,
         dateKey: this.confirmedBooking.date,
         startTime: this.confirmedBooking.start_time,
         endTime: this.confirmedBooking.end_time

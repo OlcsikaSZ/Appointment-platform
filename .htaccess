@@ -10,6 +10,8 @@ DirectoryIndex frontend/index.php
 
     RewriteRule ^api/?(.*)$ backend/public/index.php/api/$1 [END,QSA]
 
+    RewriteRule ^uploads/(.*)$ backend/storage/app/public/$1 [END]
+
     RewriteRule ^assets/(.*)$ frontend/assets/$1 [END]
     RewriteRule ^views/(.*\.(js|css))$ frontend/views/$1 [END]
     RewriteRule ^views(/|$) - [F,L]

@@ -115,6 +115,21 @@ http://localhost/appointment-platform/api/v1
 - **Backend**: uj vegpontok a blokkolt idoszakok listazasahoz es torlesehez, valamint szures (statusz, datum,
   nev/elerhetoseg szerinti kereses) az admin foglalas-listahoz. A demo szolgaltatasokhoz mintaarak is
   bekerultek, hogy a design realisztikusan mutasson uj adatbazison is.
+- **"Weboldal" admin ful (uj)**: a fooldal mostantol sablonkent viselkedik, es adminban teljesen
+  szerkesztheto, ugyanugy mint a szolgaltatasok:
+  - Cegadatok: cegnev, szlogen, monogram (vagy feltoltott logo), bemutatkozas cim + szoveg,
+    telefon, e-mail, cim, Google Maps link, nyitvatartas szoveg.
+  - Szolgaltatas kepek: minden szolgaltatashoz kepet lehet feltolteni (a "Szolgaltatasok" fulon,
+    a szerkeszto urlapon).
+  - GYIK: sajat kerdes/valasz parok listaja, be/kikapcsolhato megjelenessel.
+  - Velemenyek: sajat vendegvelemenyek listaja (nev, csillagos ertekeles, szoveg), placeholder
+    adatokkal feltoltve, hogy induláskor is eletszerunek tunjon a fooldal.
+  A fooldalon (bal felso sarok) a cegnev, a bemutatkozas, a szolgaltatas-kepek, a kapcsolat blokk,
+  a velemenyek es a GYIK szekcio automatikusan ezekbol az adatokbol epul fel.
 
 Ha `php artisan migrate --seed`-et mar korabban lefuttattad, futtasd ujra `php artisan migrate:fresh --seed`-et,
-hogy a friss mintaarak es minden tabla biztosan meglegyen.
+hogy a friss mintaarak, a GYIK/velemeny tablak es minden uj mezo biztosan meglegyen.
+
+Feltoltott kepek (logo, szolgaltatas kep) a `backend/storage/app/public/` ala kerulnek, es a
+`http://localhost/appointment-platform/uploads/...` cimen erhetok el (lasd a gyoker `.htaccess`
+`uploads/` szabalyat) — nincs szukseg `php artisan storage:link`-re.

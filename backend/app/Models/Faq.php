@@ -5,36 +5,26 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Service extends Model
+class Faq extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'business_id',
-        'category',
-        'name',
-        'description',
-        'image_url',
-        'duration_minutes',
-        'buffer_minutes',
-        'price_cents',
+        'question',
+        'answer',
         'active',
         'sort_order',
     ];
 
     protected $casts = [
         'active' => 'boolean',
+        'sort_order' => 'integer',
     ];
 
     public function business(): BelongsTo
     {
         return $this->belongsTo(Business::class);
-    }
-
-    public function bookings(): HasMany
-    {
-        return $this->hasMany(Booking::class);
     }
 }

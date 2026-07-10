@@ -76,6 +76,7 @@ class AdminServiceController extends Controller
             'category' => [$partial ? 'sometimes' : 'nullable', 'string', 'max:80'],
             'name' => [$required, 'string', 'max:120'],
             'description' => ['nullable', 'string', 'max:500'],
+            'image_path' => ['nullable', 'string', 'max:255'],
             'duration_minutes' => [$required, 'integer', 'min:5', 'max:1440'],
             'buffer_minutes' => [$partial ? 'sometimes' : 'nullable', 'integer', 'min:0', 'max:240'],
             'price_cents' => ['nullable', 'integer', 'min:0', 'max:999999900'],

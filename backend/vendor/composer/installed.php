@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'olcsi/appointment-backend',
-        'pretty_version' => '1.0.0+no-version-set',
-        'version' => '1.0.0.0',
-        'reference' => null,
+        'pretty_version' => 'dev-main',
+        'version' => 'dev-main',
+        'reference' => '93043256aca9d992999c3db076174641fff3556a',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -530,9 +530,9 @@
             'dev_requirement' => false,
         ),
         'olcsi/appointment-backend' => array(
-            'pretty_version' => '1.0.0+no-version-set',
-            'version' => '1.0.0.0',
-            'reference' => null,
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
+            'reference' => '93043256aca9d992999c3db076174641fff3556a',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

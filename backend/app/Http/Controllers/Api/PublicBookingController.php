@@ -30,9 +30,29 @@ class PublicBookingController extends Controller
                 'name' => $business->name,
                 'slug' => $business->slug,
                 'tagline' => $business->tagline,
+                'heroTitle' => $business->hero_title,
+                'heroText' => $business->hero_text,
+                'aboutTitle' => $business->about_title,
+                'aboutText' => $business->about_text,
+                'phone' => $business->phone,
+                'email' => $business->email,
+                'address' => $business->address,
+                'openingHours' => $business->opening_hours,
+                'googleMapsUrl' => $business->google_maps_url,
+                'logoUrl' => $business->logo_path,
                 'timezone' => $business->timezone,
                 'primaryColor' => $business->primary_color,
                 'logoText' => $business->logo_text,
+                'reviews' => $business->reviews()
+                    ->where('active', true)
+                    ->orderBy('sort_order')
+                    ->orderBy('id')
+                    ->get(['id', 'author', 'text', 'rating']),
+                'faqs' => $business->faqs()
+                    ->where('active', true)
+                    ->orderBy('sort_order')
+                    ->orderBy('id')
+                    ->get(['id', 'question', 'answer']),
             ],
         ]);
     }
@@ -52,11 +72,11 @@ class PublicBookingController extends Controller
     public function slots(Request $request, Business $business): JsonResponse
     {
         $validated = $request->validate([
-            'service_id' => ['required', 'integer', Rule::exists('services', 'id')->where('business_id', $business->id)],
+            'service_id' => ['required', 'integer', Rule::exists('services', 'id')->where(fn ($query) => $query->where('business_id', $business->id)->where('active', true))],
             'date' => ['required', 'date_format:Y-m-d'],
         ]);
 
-        $service = Service::where('business_id', $business->id)->findOrFail($validated['service_id']);
+        $service = Service::where('business_id', $business->id)->where('active', true)->findOrFail($validated['service_id']);
 
         return response()->json([
             'data' => $this->slotService->slotsFor($business, $service, $validated['date']),
@@ -66,7 +86,7 @@ class PublicBookingController extends Controller
     public function store(Request $request, Business $business): JsonResponse
     {
         $validated = $request->validate([
-            'service_id' => ['required', 'integer', Rule::exists('services', 'id')->where('business_id', $business->id)],
+            'service_id' => ['required', 'integer', Rule::exists('services', 'id')->where(fn ($query) => $query->where('business_id', $business->id)->where('active', true))],
             'date' => ['required', 'date_format:Y-m-d'],
             'time' => ['required', 'date_format:H:i'],
             'customer_name' => ['required', 'string', 'max:120'],
@@ -74,7 +94,7 @@ class PublicBookingController extends Controller
             'customer_note' => ['nullable', 'string', 'max:800'],
         ]);
 
-        $service = Service::where('business_id', $business->id)->findOrFail($validated['service_id']);
+        $service = Service::where('business_id', $business->id)->where('active', true)->findOrFail($validated['service_id']);
 
         return $this->withBookingDateLock($business, $validated['date'], function () use ($business, $service, $validated): JsonResponse {
             return DB::transaction(function () use ($business, $service, $validated): JsonResponse {

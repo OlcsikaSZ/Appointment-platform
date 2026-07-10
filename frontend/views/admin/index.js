@@ -19,6 +19,10 @@ createApp({
       blockingTime: false,
       savingManual: false,
       savingService: false,
+      savingWebsite: false,
+      uploadingLogo: false,
+      savingReview: false,
+      savingFaq: false,
       stats: {},
       bookings: [],
       todayBookings: [],
@@ -26,6 +30,8 @@ createApp({
       calendarBlocks: [],
       blockedTimes: [],
       services: [],
+      reviews: [],
+      faqs: [],
       slots: [],
       activeTab: 'calendar',
       calendarMode: 'day',
@@ -33,7 +39,10 @@ createApp({
       filters: { status: '', date: '', q: '' },
       block: { date: todayKey(), start_time: '12:00', end_time: '13:00', reason: '' },
       manual: { service_id: '', date: todayKey(), time: '', customer_name: '', customer_contact: '', customer_note: '' },
-      serviceForm: { id: null, category: 'Altalanos', name: '', description: '', duration_minutes: 45, buffer_minutes: 10, price_forint: '', active: true, sort_order: 0 },
+      serviceForm: { id: null, category: 'Altalanos', name: '', description: '', image_url: '', duration_minutes: 45, buffer_minutes: 10, price_forint: '', active: true, sort_order: 0 },
+      websiteForm: { name: '', tagline: '', hero_title: '', hero_text: '', about_title: '', about_text: '', phone: '', email: '', address: '', opening_hours: '', google_maps_url: '' },
+      reviewForm: { id: null, author: '', text: '', rating: 5, active: true, sort_order: 0 },
+      faqForm: { id: null, question: '', answer: '', active: true, sort_order: 0 },
       toasts: useToasts(reactive),
       debounceHandle: null
     };
@@ -59,13 +68,18 @@ createApp({
       this.business = response.data || {};
     } catch {}
 
-    if (this.token) await this.refresh();
+    if (this.token) {
+      await Promise.all([this.refresh(), this.loadWebsite()]);
+    }
   },
 
   methods: {
     statusLabel(status) { return STATUS_LABELS[status] || status; },
     price(service) { return formatPrice(service.price_cents); },
     shortTime(value) { return String(value || '').slice(0, 5); },
+    monogram(name) {
+      return String(name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toLocaleUpperCase('hu-HU') || '').join('');
+    },
     itemsForDay(day) { return this.calendarItems.filter((item) => item.date === day); },
     blocksForDay(day) { return this.calendarBlocks.filter((item) => item.date === day); },
 
@@ -76,7 +90,7 @@ createApp({
         this.token = response.token;
         localStorage.setItem('admin_token', response.token);
         this.toasts.success('Sikeres bejelentkezés.');
-        await this.refresh();
+        await Promise.all([this.refresh(), this.loadWebsite()]);
       } catch (error) {
         this.toasts.error(`Sikertelen bejelentkezés: ${error.message}`);
       } finally {
@@ -91,6 +105,8 @@ createApp({
       this.stats = {};
       this.blockedTimes = [];
       this.services = [];
+      this.reviews = [];
+      this.faqs = [];
     },
 
     async refresh() {
@@ -194,12 +210,188 @@ createApp({
       } catch (error) { this.toasts.error(`Nem sikerült törölni: ${error.message}`); }
     },
 
+    async openWebsiteTab() {
+      this.activeTab = 'website';
+      if (!this.websiteForm.name) await this.loadWebsite();
+    },
+
+    mapWebsiteForm(business) {
+      return {
+        name: business.name || '',
+        tagline: business.tagline || '',
+        hero_title: business.heroTitle || '',
+        hero_text: business.heroText || '',
+        about_title: business.aboutTitle || '',
+        about_text: business.aboutText || '',
+        phone: business.phone || '',
+        email: business.email || '',
+        address: business.address || '',
+        opening_hours: business.openingHours || '',
+        google_maps_url: business.googleMapsUrl || ''
+      };
+    },
+
+    async loadWebsite() {
+      if (!this.token) return;
+      try {
+        const response = await api(`/admin/businesses/${window.App.config.businessId}/website`, { token: this.token });
+        const data = response.data || {};
+        this.business = data.business || this.business;
+        this.websiteForm = this.mapWebsiteForm(this.business);
+        this.reviews = data.reviews || [];
+        this.faqs = data.faqs || [];
+      } catch (error) {
+        this.toasts.error(`A weboldal beállításai nem tölthetők be: ${error.message}`);
+      }
+    },
+
+    async saveWebsite() {
+      this.savingWebsite = true;
+      try {
+        const response = await api(`/admin/businesses/${window.App.config.businessId}/website`, {
+          method: 'PATCH',
+          token: this.token,
+          body: JSON.stringify(this.websiteForm)
+        });
+        this.business = response.data || this.business;
+        this.websiteForm = this.mapWebsiteForm(this.business);
+        this.toasts.success('Weboldal beállítások elmentve. A publikus oldal azonnal frissül.');
+      } catch (error) {
+        this.toasts.error(`Weboldal mentése sikertelen: ${error.message}`);
+      } finally {
+        this.savingWebsite = false;
+      }
+    },
+
+    async uploadLogo(event) {
+      const file = event.target.files?.[0];
+      if (!file || this.uploadingLogo) return;
+      this.uploadingLogo = true;
+      try {
+        const formData = new FormData();
+        formData.append('logo', file);
+        const response = await api(`/admin/businesses/${window.App.config.businessId}/logo`, {
+          method: 'POST',
+          token: this.token,
+          body: formData
+        });
+        this.business = response.data || this.business;
+        this.toasts.success('Logó feltöltve.');
+      } catch (error) {
+        this.toasts.error(`Logó feltöltése sikertelen: ${error.message}`);
+      } finally {
+        this.uploadingLogo = false;
+        event.target.value = '';
+      }
+    },
+
+    async deleteLogo() {
+      if (!confirm('Biztosan törlöd a feltöltött logót? Ezután a rendszer monogramot használ.')) return;
+      try {
+        const response = await api(`/admin/businesses/${window.App.config.businessId}/logo`, { method: 'DELETE', token: this.token });
+        this.business = response.data || this.business;
+        this.toasts.success('Logó törölve, a monogram aktív.');
+      } catch (error) {
+        this.toasts.error(`Logó törlése sikertelen: ${error.message}`);
+      }
+    },
+
+    editReview(review) {
+      this.reviewForm = {
+        id: review.id,
+        author: review.author || '',
+        text: review.text || '',
+        rating: Number(review.rating || 5),
+        active: !!review.active,
+        sort_order: Number(review.sort_order || 0)
+      };
+    },
+
+    resetReviewForm() {
+      this.reviewForm = { id: null, author: '', text: '', rating: 5, active: true, sort_order: this.reviews.length + 1 };
+    },
+
+    async saveReview() {
+      this.savingReview = true;
+      try {
+        const path = this.reviewForm.id ? `/admin/reviews/${this.reviewForm.id}` : `/admin/businesses/${window.App.config.businessId}/reviews`;
+        await api(path, {
+          method: this.reviewForm.id ? 'PATCH' : 'POST',
+          token: this.token,
+          body: JSON.stringify(this.reviewForm)
+        });
+        this.toasts.success(this.reviewForm.id ? 'Vélemény módosítva.' : 'Vélemény hozzáadva.');
+        this.resetReviewForm();
+        await this.loadWebsite();
+      } catch (error) {
+        this.toasts.error(`Vélemény mentése sikertelen: ${error.message}`);
+      } finally {
+        this.savingReview = false;
+      }
+    },
+
+    async deleteReview(review) {
+      if (!confirm(`Biztosan törlöd ezt a véleményt: ${review.author}?`)) return;
+      try {
+        await api(`/admin/reviews/${review.id}`, { method: 'DELETE', token: this.token });
+        this.toasts.success('Vélemény törölve.');
+        await this.loadWebsite();
+      } catch (error) {
+        this.toasts.error(`Vélemény törlése sikertelen: ${error.message}`);
+      }
+    },
+
+    editFaq(faq) {
+      this.faqForm = {
+        id: faq.id,
+        question: faq.question || '',
+        answer: faq.answer || '',
+        active: !!faq.active,
+        sort_order: Number(faq.sort_order || 0)
+      };
+    },
+
+    resetFaqForm() {
+      this.faqForm = { id: null, question: '', answer: '', active: true, sort_order: this.faqs.length + 1 };
+    },
+
+    async saveFaq() {
+      this.savingFaq = true;
+      try {
+        const path = this.faqForm.id ? `/admin/faqs/${this.faqForm.id}` : `/admin/businesses/${window.App.config.businessId}/faqs`;
+        await api(path, {
+          method: this.faqForm.id ? 'PATCH' : 'POST',
+          token: this.token,
+          body: JSON.stringify(this.faqForm)
+        });
+        this.toasts.success(this.faqForm.id ? 'GYIK módosítva.' : 'GYIK elem hozzáadva.');
+        this.resetFaqForm();
+        await this.loadWebsite();
+      } catch (error) {
+        this.toasts.error(`GYIK mentése sikertelen: ${error.message}`);
+      } finally {
+        this.savingFaq = false;
+      }
+    },
+
+    async deleteFaq(faq) {
+      if (!confirm(`Biztosan törlöd ezt a GYIK elemet: ${faq.question}?`)) return;
+      try {
+        await api(`/admin/faqs/${faq.id}`, { method: 'DELETE', token: this.token });
+        this.toasts.success('GYIK elem törölve.');
+        await this.loadWebsite();
+      } catch (error) {
+        this.toasts.error(`GYIK törlése sikertelen: ${error.message}`);
+      }
+    },
+
     editService(service) {
       this.serviceForm = {
         id: service.id,
         category: service.category || 'Altalanos',
         name: service.name || '',
         description: service.description || '',
+        image_url: service.image_url || '',
         duration_minutes: service.duration_minutes || 45,
         buffer_minutes: service.buffer_minutes ?? 10,
         price_forint: service.price_cents === null || service.price_cents === undefined ? '' : Math.round(service.price_cents / 100),
@@ -210,7 +402,7 @@ createApp({
     },
 
     resetServiceForm() {
-      this.serviceForm = { id: null, category: 'Altalanos', name: '', description: '', duration_minutes: 45, buffer_minutes: 10, price_forint: '', active: true, sort_order: this.services.length + 1 };
+      this.serviceForm = { id: null, category: 'Altalanos', name: '', description: '', image_url: '', duration_minutes: 45, buffer_minutes: 10, price_forint: '', active: true, sort_order: this.services.length + 1 };
     },
 
     servicePayload() {
@@ -218,6 +410,7 @@ createApp({
         category: this.serviceForm.category || 'Altalanos',
         name: this.serviceForm.name,
         description: this.serviceForm.description,
+        image_url: this.serviceForm.image_url || null,
         duration_minutes: Number(this.serviceForm.duration_minutes),
         buffer_minutes: Number(this.serviceForm.buffer_minutes || 0),
         price_cents: this.serviceForm.price_forint === '' ? null : Number(this.serviceForm.price_forint) * 100,

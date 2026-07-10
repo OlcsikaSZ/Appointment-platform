@@ -14,6 +14,16 @@ class Business extends Model
         'name',
         'slug',
         'tagline',
+        'hero_title',
+        'hero_text',
+        'about_title',
+        'about_text',
+        'phone',
+        'email',
+        'address',
+        'opening_hours',
+        'google_maps_url',
+        'logo_path',
         'timezone',
         'primary_color',
         'logo_text',
@@ -42,5 +52,15 @@ class Business extends Model
     public function blockedTimes(): HasMany
     {
         return $this->hasMany(BlockedTime::class);
+    }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    public function faqs(): HasMany
+    {
+        return $this->hasMany(Faq::class);
     }
 }

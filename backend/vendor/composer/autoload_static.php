@@ -489,12 +489,15 @@ class ComposerStaticInit82605f25614e2b2a3f8f31407c556824
 
     public static $classMap = array (
         'App\\Http\\Controllers\\Api\\AdminBookingController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/AdminBookingController.php',
+        'App\\Http\\Controllers\\Api\\AdminServiceController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/AdminServiceController.php',
         'App\\Http\\Controllers\\Api\\AuthController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/AuthController.php',
         'App\\Http\\Controllers\\Api\\PublicBookingController' => __DIR__ . '/../..' . '/app/Http/Controllers/Api/PublicBookingController.php',
         'App\\Http\\Controllers\\Controller' => __DIR__ . '/../..' . '/app/Http/Controllers/Controller.php',
         'App\\Models\\BlockedTime' => __DIR__ . '/../..' . '/app/Models/BlockedTime.php',
         'App\\Models\\Booking' => __DIR__ . '/../..' . '/app/Models/Booking.php',
         'App\\Models\\Business' => __DIR__ . '/../..' . '/app/Models/Business.php',
+        'App\\Models\\Faq' => __DIR__ . '/../..' . '/app/Models/Faq.php',
+        'App\\Models\\Review' => __DIR__ . '/../..' . '/app/Models/Review.php',
         'App\\Models\\Service' => __DIR__ . '/../..' . '/app/Models/Service.php',
         'App\\Models\\User' => __DIR__ . '/../..' . '/app/Models/User.php',
         'App\\Models\\WorkingHour' => __DIR__ . '/../..' . '/app/Models/WorkingHour.php',

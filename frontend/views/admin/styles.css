@@ -1,12 +1,12 @@
 .admin-shell { max-width: 1180px; }
 .admin-headline, .section-title, .calendar-toolbar { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; }
 .tabs { display:flex; gap:10px; margin:22px 0; flex-wrap:wrap; }
-.tabs button { border:1px solid var(--border); background:#fffaf3; border-radius:999px; padding:10px 16px; font-weight:800; cursor:pointer; color:var(--ink); }
+.tabs button { border:1px solid var(--line); background:#fffaf3; border-radius:999px; padding:10px 16px; font-weight:800; cursor:pointer; color:var(--ink); }
 .tabs button.active { background:var(--ink); color:white; }
 .wide-left { grid-template-columns:minmax(0, 1fr) 320px; }
 .today-panel, .calendar-panel, .form-panel, .service-list-panel, .service-editor { padding:24px; margin-bottom:22px; }
 .today-list { display:grid; gap:10px; }
-.today-item, .calendar-event, .service-admin-card { border:1px solid var(--border); border-radius:16px; padding:13px; background:#fffdf9; }
+.today-item, .calendar-event, .service-admin-card { border:1px solid var(--line); border-radius:16px; padding:13px; background:#fffdf9; }
 .today-item { display:grid; gap:4px; }
 .today-item.cancelled, .service-admin-card.inactive { opacity:.6; }
 .today-item small, .calendar-event small, .service-admin-card small { color:var(--muted); }
@@ -16,7 +16,7 @@
 .calendar-grid { display:grid; gap:12px; margin-top:18px; }
 .calendar-grid.day { grid-template-columns:1fr; }
 .calendar-grid.week { grid-template-columns:repeat(7, minmax(130px, 1fr)); overflow:auto; }
-.day-column { min-height:240px; border:1px dashed var(--border); border-radius:18px; padding:12px; background:#fffaf3; }
+.day-column { min-height:240px; border:1px dashed var(--line); border-radius:18px; padding:12px; background:#fffaf3; }
 .day-column h3 { font-size:13px; margin-bottom:10px; }
 .calendar-event { margin-bottom:9px; display:grid; gap:3px; border-left:4px solid var(--ink); }
 .calendar-event.cancelled { border-left-color:#d85b73; opacity:.65; }
@@ -26,7 +26,7 @@
 .compact { padding:10px; font-size:13px; }
 .admin-form-grid { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:16px; margin-top:18px; }
 .admin-form-grid .full { grid-column:1 / -1; }
-textarea { width:100%; border:1px solid var(--border); border-radius:12px; padding:12px 14px; font:inherit; color:var(--ink); background:#fffdf9; resize:vertical; }
+textarea { width:100%; border:1px solid var(--line); border-radius:12px; padding:12px 14px; font:inherit; color:var(--ink); background:#fffdf9; resize:vertical; }
 .service-admin-list { display:grid; gap:12px; margin-top:18px; }
 .service-admin-card { display:flex; justify-content:space-between; gap:18px; align-items:flex-start; }
 .service-admin-card p { margin:6px 0 0; color:var(--muted); }
@@ -40,4 +40,46 @@ textarea { width:100%; border:1px solid var(--border); border-radius:12px; paddi
   .admin-form-grid { grid-template-columns:1fr; }
   .calendar-grid.week { grid-template-columns:1fr; }
   .service-admin-card { flex-direction:column; }
+}
+
+
+/* --- Weboldal testreszabás --- */
+.admin-brand-mark { overflow:hidden; }
+.admin-brand-mark img { width:100%; height:100%; object-fit:cover; display:block; }
+.website-admin-section { display:grid; gap:22px; }
+.website-layout { display:grid; grid-template-columns:minmax(0, 1.45fr) minmax(280px, .55fr); gap:22px; align-items:start; }
+.website-settings-panel, .website-preview-panel, .content-editor-panel { padding:24px; }
+.website-preview-panel { position:sticky; top:18px; }
+.logo-editor { display:grid; grid-template-columns:100px 1fr; gap:18px; align-items:center; margin:20px 0 24px; padding:18px; border:1px solid var(--line); border-radius:16px; background:#fffaf3; }
+.logo-editor p { margin:4px 0 0; color:var(--muted); font-size:13px; }
+.logo-preview { width:88px; height:88px; border-radius:20px; display:grid; place-items:center; overflow:hidden; background:linear-gradient(155deg, var(--ink), #2c3968); color:white; font-family:var(--font-display); font-size:28px; font-weight:800; box-shadow:var(--shadow-sm); }
+.logo-preview img { width:100%; height:100%; object-fit:cover; display:block; }
+.logo-preview.small { width:48px; height:48px; border-radius:12px; font-size:16px; }
+.file-button { position:relative; overflow:hidden; }
+.file-button input { position:absolute; inset:0; opacity:0; cursor:pointer; }
+.website-form { display:grid; gap:14px; }
+.save-state { color:var(--muted); font-size:13px; font-weight:700; }
+.mini-site-preview { border:1px solid var(--line); border-radius:18px; overflow:hidden; background:#fffdf9; margin:16px 0; }
+.mini-preview-brand { display:flex; align-items:center; gap:10px; padding:14px; border-bottom:1px solid var(--line); }
+.mini-preview-brand strong, .mini-preview-brand small { display:block; }
+.mini-preview-brand small { color:var(--muted); font-size:11px; }
+.mini-preview-hero { padding:28px 18px; background:linear-gradient(145deg, #fffdf9, #f4ead9); }
+.mini-preview-hero > span { color:#8a5a14; font-size:9px; font-weight:800; letter-spacing:.08em; }
+.mini-preview-hero h3 { margin-top:8px; font-size:25px; }
+.mini-preview-hero p { margin-top:8px; color:var(--muted); font-size:12px; line-height:1.5; }
+.mini-preview-hero button { margin-top:14px; border:0; border-radius:999px; padding:9px 13px; background:var(--ink); color:white; font-weight:800; font-size:11px; }
+.content-management-grid { display:grid; grid-template-columns:1fr 1fr; gap:22px; align-items:start; }
+.content-admin-list { display:grid; gap:10px; margin-top:18px; }
+.content-admin-card { border:1px solid var(--line); border-radius:14px; padding:14px; background:#fffdf9; display:grid; gap:10px; }
+.content-admin-card.inactive { opacity:.55; }
+.content-admin-card p { margin:6px 0 0; color:var(--muted); font-size:13px; }
+.stars-admin { display:block; color:#d99a2b; font-size:12px; margin-top:3px; letter-spacing:.06em; }
+.content-form { display:grid; gap:12px; margin-top:20px; padding-top:20px; border-top:1px solid var(--line); }
+@media (max-width: 980px) {
+  .website-layout, .content-management-grid { grid-template-columns:1fr; }
+  .website-preview-panel { position:static; }
+}
+@media (max-width: 640px) {
+  .logo-editor { grid-template-columns:1fr; }
+  .two-cols { grid-template-columns:1fr; }
 }

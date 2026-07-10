@@ -15,7 +15,10 @@
 
     <header class="topbar">
       <a class="brand" href="<?= route_url('main') ?>">
-        <span class="brand-mark">{{ business.logoText || '·' }}</span>
+        <span class="brand-mark admin-brand-mark">
+          <img v-if="business.logoUrl" :src="business.logoUrl" :alt="business.name ? business.name + ' logó' : 'Vállalkozás logó'" />
+          <template v-else>{{ business.logoText || monogram(business.name) || '·' }}</template>
+        </span>
         <span><strong>{{ business.name || 'Időpontfoglalás' }}</strong><small>Admin felület</small></span>
       </a>
       <nav>
@@ -55,6 +58,7 @@
         <button :class="{active: activeTab === 'calendar'}" @click="activeTab = 'calendar'">Naptár</button>
         <button :class="{active: activeTab === 'manual'}" @click="activeTab = 'manual'">Kézi foglalás</button>
         <button :class="{active: activeTab === 'services'}" @click="activeTab = 'services'">Szolgáltatások</button>
+        <button :class="{active: activeTab === 'website'}" @click="openWebsiteTab">Weboldal</button>
         <button :class="{active: activeTab === 'list'}" @click="activeTab = 'list'">Lista</button>
       </div>
 
@@ -160,12 +164,127 @@
             <label>Név <input v-model.trim="serviceForm.name" required /></label>
             <label>Kategória <input v-model.trim="serviceForm.category" /></label>
             <label>Leírás <textarea v-model.trim="serviceForm.description" rows="3"></textarea></label>
+            <label>Szolgáltatás kép URL <input v-model.trim="serviceForm.image_url" type="url" placeholder="https://... (nem kötelező)" /></label>
             <div class="two-cols"><label>Időtartam / perc <input v-model.number="serviceForm.duration_minutes" type="number" min="5" required /></label><label>Puffer / perc <input v-model.number="serviceForm.buffer_minutes" type="number" min="0" /></label></div>
             <div class="two-cols"><label>Ár / Ft <input v-model.number="serviceForm.price_forint" type="number" min="0" placeholder="pl. 12000" /></label><label>Sorrend <input v-model.number="serviceForm.sort_order" type="number" min="0" /></label></div>
             <label class="checkline"><input v-model="serviceForm.active" type="checkbox" /> Aktív, foglalható szolgáltatás</label>
             <button class="button primary block" :disabled="savingService">{{ savingService ? 'Mentés…' : 'Szolgáltatás mentése' }}</button>
           </form>
         </aside>
+      </section>
+
+
+      <section v-if="activeTab === 'website'" class="website-admin-section">
+        <div class="website-layout">
+          <section class="panel website-settings-panel">
+            <div class="section-title">
+              <div><p class="eyebrow">Weboldal beállítások</p><h2>Arculat és nyilvános adatok</h2></div>
+              <span class="save-state" v-if="savingWebsite">Mentés…</span>
+            </div>
+
+            <div class="logo-editor">
+              <div class="logo-preview admin-logo-preview">
+                <img v-if="business.logoUrl" :src="business.logoUrl" :alt="business.name ? business.name + ' logó' : 'Vállalkozás logó'" />
+                <template v-else>{{ business.logoText || monogram(websiteForm.name) || 'IP' }}</template>
+              </div>
+              <div>
+                <strong>Logó</strong>
+                <p>JPG, PNG vagy WebP, legfeljebb 3 MB. Ha nincs feltöltve logó, automatikus monogram jelenik meg.</p>
+                <div class="inline-actions">
+                  <label class="button sm file-button">{{ uploadingLogo ? 'Feltöltés…' : 'Logó feltöltése' }}<input ref="logoInput" type="file" accept="image/jpeg,image/png,image/webp" @change="uploadLogo" /></label>
+                  <button v-if="business.logoUrl" class="button sm danger" type="button" @click="deleteLogo">Logó törlése</button>
+                </div>
+              </div>
+            </div>
+
+            <form class="website-form" @submit.prevent="saveWebsite">
+              <div class="two-cols">
+                <label>Cégnév <input v-model.trim="websiteForm.name" required maxlength="160" /></label>
+                <label>Rövid alcím <input v-model.trim="websiteForm.tagline" maxlength="240" /></label>
+              </div>
+
+              <label>Hero főcím <input v-model.trim="websiteForm.hero_title" maxlength="220" placeholder="Egyszerű foglalás. Megbízható szolgáltatás." /></label>
+              <label>Hero leírás <textarea v-model.trim="websiteForm.hero_text" rows="3" maxlength="1200"></textarea></label>
+
+              <div class="two-cols">
+                <label>Bemutatkozás címe <input v-model.trim="websiteForm.about_title" maxlength="160" /></label>
+                <label>Telefonszám <input v-model.trim="websiteForm.phone" maxlength="80" /></label>
+              </div>
+              <label>Bemutatkozó szöveg <textarea v-model.trim="websiteForm.about_text" rows="6" maxlength="4000"></textarea></label>
+
+              <div class="two-cols">
+                <label>E-mail <input v-model.trim="websiteForm.email" type="email" maxlength="160" /></label>
+                <label>Cím <input v-model.trim="websiteForm.address" maxlength="255" /></label>
+              </div>
+              <label>Nyitvatartás <textarea v-model.trim="websiteForm.opening_hours" rows="4" maxlength="2000" placeholder="Hétfő–Péntek: 09:00–17:00"></textarea></label>
+              <label>Google Maps link <input v-model.trim="websiteForm.google_maps_url" type="url" maxlength="2000" placeholder="https://www.google.com/maps/..." /></label>
+
+              <button class="button primary" type="submit" :disabled="savingWebsite">{{ savingWebsite ? 'Mentés…' : 'Weboldal beállítások mentése' }}</button>
+            </form>
+          </section>
+
+          <aside class="panel website-preview-panel">
+            <p class="eyebrow">Élő előnézet</p>
+            <div class="mini-site-preview">
+              <div class="mini-preview-brand">
+                <div class="logo-preview small">
+                  <img v-if="business.logoUrl" :src="business.logoUrl" :alt="business.name || 'Logó'" />
+                  <template v-else>{{ business.logoText || monogram(websiteForm.name) || 'IP' }}</template>
+                </div>
+                <div><strong>{{ websiteForm.name || 'Vállalkozás neve' }}</strong><small>{{ websiteForm.tagline || 'Rövid bemutatkozó alcím' }}</small></div>
+              </div>
+              <div class="mini-preview-hero">
+                <span>ONLINE IDŐPONTFOGLALÁS</span>
+                <h3>{{ websiteForm.hero_title || 'A főcím itt jelenik meg' }}</h3>
+                <p>{{ websiteForm.hero_text || 'Itt jelenik meg a rövid bemutatkozó szöveg.' }}</p>
+                <button type="button">Időpontot foglalok</button>
+              </div>
+            </div>
+            <a class="button block" href="<?= route_url('main') ?>" target="_blank" rel="noopener">Nyilvános oldal megnyitása</a>
+          </aside>
+        </div>
+
+        <div class="content-management-grid">
+          <section class="panel content-editor-panel">
+            <div class="section-title"><div><p class="eyebrow">Vélemények</p><h2>Bizalomépítő visszajelzések</h2></div><button class="button sm" type="button" @click="resetReviewForm">Új vélemény</button></div>
+
+            <div class="content-admin-list">
+              <article v-for="review in reviews" :key="review.id" class="content-admin-card" :class="{inactive: !review.active}">
+                <div><strong>{{ review.author }}</strong><span class="stars-admin">{{ '★'.repeat(review.rating) }}</span><p>{{ review.text }}</p></div>
+                <div class="service-actions"><button class="button sm" type="button" @click="editReview(review)">Szerkesztés</button><button class="button sm danger" type="button" @click="deleteReview(review)">Törlés</button></div>
+              </article>
+              <p v-if="!reviews.length" class="empty compact">Még nincs vélemény.</p>
+            </div>
+
+            <form class="content-form" @submit.prevent="saveReview">
+              <h3>{{ reviewForm.id ? 'Vélemény szerkesztése' : 'Új vélemény' }}</h3>
+              <div class="two-cols"><label>Név <input v-model.trim="reviewForm.author" required maxlength="120" /></label><label>Értékelés <select v-model.number="reviewForm.rating"><option :value="5">5 csillag</option><option :value="4">4 csillag</option><option :value="3">3 csillag</option><option :value="2">2 csillag</option><option :value="1">1 csillag</option></select></label></div>
+              <label>Szöveg <textarea v-model.trim="reviewForm.text" rows="4" required maxlength="1200"></textarea></label>
+              <div class="two-cols"><label>Sorrend <input v-model.number="reviewForm.sort_order" type="number" min="0" max="1000" /></label><label class="checkline"><input v-model="reviewForm.active" type="checkbox" /> Megjelenik a weboldalon</label></div>
+              <div class="inline-actions"><button class="button primary" :disabled="savingReview">{{ savingReview ? 'Mentés…' : 'Vélemény mentése' }}</button><button v-if="reviewForm.id" class="button" type="button" @click="resetReviewForm">Mégse</button></div>
+            </form>
+          </section>
+
+          <section class="panel content-editor-panel">
+            <div class="section-title"><div><p class="eyebrow">GYIK</p><h2>Gyakori kérdések</h2></div><button class="button sm" type="button" @click="resetFaqForm">Új kérdés</button></div>
+
+            <div class="content-admin-list">
+              <article v-for="faq in faqs" :key="faq.id" class="content-admin-card" :class="{inactive: !faq.active}">
+                <div><strong>{{ faq.question }}</strong><p>{{ faq.answer }}</p></div>
+                <div class="service-actions"><button class="button sm" type="button" @click="editFaq(faq)">Szerkesztés</button><button class="button sm danger" type="button" @click="deleteFaq(faq)">Törlés</button></div>
+              </article>
+              <p v-if="!faqs.length" class="empty compact">Még nincs GYIK elem.</p>
+            </div>
+
+            <form class="content-form" @submit.prevent="saveFaq">
+              <h3>{{ faqForm.id ? 'GYIK szerkesztése' : 'Új GYIK elem' }}</h3>
+              <label>Kérdés <input v-model.trim="faqForm.question" required maxlength="255" /></label>
+              <label>Válasz <textarea v-model.trim="faqForm.answer" rows="4" required maxlength="3000"></textarea></label>
+              <div class="two-cols"><label>Sorrend <input v-model.number="faqForm.sort_order" type="number" min="0" max="1000" /></label><label class="checkline"><input v-model="faqForm.active" type="checkbox" /> Megjelenik a weboldalon</label></div>
+              <div class="inline-actions"><button class="button primary" :disabled="savingFaq">{{ savingFaq ? 'Mentés…' : 'GYIK mentése' }}</button><button v-if="faqForm.id" class="button" type="button" @click="resetFaqForm">Mégse</button></div>
+            </form>
+          </section>
+        </div>
       </section>
 
       <section v-if="activeTab === 'list'">

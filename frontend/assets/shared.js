@@ -106,11 +106,12 @@
 
   async function api(path, options = {}) {
     const { token, headers = {}, ...requestOptions } = options;
+    const isFormData = typeof FormData !== 'undefined' && requestOptions.body instanceof FormData;
     const response = await fetch(`${config.apiBase}${path}`, {
       cache: 'no-store',
       headers: {
-        'Content-Type': 'application/json',
         Accept: 'application/json',
+        ...(!isFormData ? { 'Content-Type': 'application/json' } : {}),
         ...headers,
         ...(token ? { Authorization: `Bearer ${token}` } : {})
       },
