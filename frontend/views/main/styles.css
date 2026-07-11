@@ -130,3 +130,15 @@
   .hero-actions .button { width: 100%; }
   .trust-row { display: grid; }
 }
+
+/* --- Egységes, egymás alatti fő elrendezés --- */
+.hero-section { grid-template-columns: 1fr; }
+.hero-card { display:grid; grid-template-columns: auto minmax(0, 1fr) minmax(260px, .85fr); align-items: center; }
+.hero-contact-list { margin: 0; }
+.booking-section.booking-grid, .confirm-wrap { grid-template-columns: 1fr; }
+.booking-section .side-panel, .confirm-wrap .side-panel { position: static; width: min(760px, 100%); margin: 0 auto; }
+.section-heading { grid-template-columns: 1fr; gap: 18px; }
+
+@media (max-width: 760px) {
+  .hero-card { grid-template-columns: 1fr; }
+}

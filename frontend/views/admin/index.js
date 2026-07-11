@@ -1,5 +1,5 @@
 const { createApp, reactive } = Vue;
-const { api, todayKey, addDaysKey, useToasts, formatPrice } = window.App;
+const { api, todayKey, parseKey, useToasts, formatPrice } = window.App;
 
 const STATUS_LABELS = {
   booked: 'Foglalva',
@@ -34,8 +34,12 @@ createApp({
       faqs: [],
       slots: [],
       activeTab: 'calendar',
-      calendarMode: 'day',
       calendarDate: todayKey(),
+      weekdayLabels: ['H', 'K', 'Sze', 'Cs', 'P', 'Szo', 'V'],
+      serviceModalOpen: false,
+      reviewModalOpen: false,
+      faqModalOpen: false,
+      websitePreviewVersion: 0,
       filters: { status: '', date: '', q: '' },
       block: { date: todayKey(), start_time: '12:00', end_time: '13:00', reason: '' },
       manual: { service_id: '', date: todayKey(), time: '', customer_name: '', customer_contact: '', customer_note: '' },
@@ -49,12 +53,40 @@ createApp({
   },
 
   computed: {
-    calendarDays() {
-      if (this.calendarMode === 'day') return [this.calendarDate];
-      const base = new Date(this.calendarDate);
-      const mondayOffset = (base.getDay() + 6) % 7;
-      const monday = addDaysKey(this.calendarDate, -mondayOffset);
-      return Array.from({ length: 7 }, (_, index) => addDaysKey(monday, index));
+    currentMonthLabel() {
+      const value = new Intl.DateTimeFormat('hu-HU', { year: 'numeric', month: 'long' }).format(parseKey(this.calendarDate));
+      return value.charAt(0).toLocaleUpperCase('hu-HU') + value.slice(1);
+    },
+
+    monthCalendarDays() {
+      const focus = parseKey(this.calendarDate);
+      const firstOfMonth = new Date(focus.getFullYear(), focus.getMonth(), 1);
+      const lastOfMonth = new Date(focus.getFullYear(), focus.getMonth() + 1, 0);
+      const mondayOffset = (firstOfMonth.getDay() + 6) % 7;
+      const sundayOffset = 6 - ((lastOfMonth.getDay() + 6) % 7);
+      const gridStart = new Date(firstOfMonth);
+      const gridEnd = new Date(lastOfMonth);
+      gridStart.setDate(gridStart.getDate() - mondayOffset);
+      gridEnd.setDate(gridEnd.getDate() + sundayOffset);
+
+      const days = [];
+      for (const cursor = new Date(gridStart); cursor <= gridEnd; cursor.setDate(cursor.getDate() + 1)) {
+        const key = this.dateKey(cursor);
+        days.push({
+          key,
+          dayNumber: cursor.getDate(),
+          inCurrentMonth: cursor.getMonth() === focus.getMonth() && cursor.getFullYear() === focus.getFullYear(),
+          isToday: key === todayKey()
+        });
+      }
+      return days;
+    },
+
+    calendarRange() {
+      return {
+        start: this.monthCalendarDays[0]?.key || this.calendarDate,
+        end: this.monthCalendarDays[this.monthCalendarDays.length - 1]?.key || this.calendarDate
+      };
     },
 
     currentService() {
@@ -63,6 +95,7 @@ createApp({
   },
 
   async mounted() {
+    window.addEventListener('keydown', this.handleKeydown);
     try {
       const response = await api(`/businesses/${window.App.config.businessSlug}`);
       this.business = response.data || {};
@@ -73,6 +106,11 @@ createApp({
     }
   },
 
+  beforeUnmount() {
+    window.removeEventListener('keydown', this.handleKeydown);
+    document.body.classList.remove('modal-open');
+  },
+
   methods: {
     statusLabel(status) { return STATUS_LABELS[status] || status; },
     price(service) { return formatPrice(service.price_cents); },
@@ -80,8 +118,28 @@ createApp({
     monogram(name) {
       return String(name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toLocaleUpperCase('hu-HU') || '').join('');
     },
+    dateKey(date) {
+      const pad = (value) => String(value).padStart(2, '0');
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    },
     itemsForDay(day) { return this.calendarItems.filter((item) => item.date === day); },
     blocksForDay(day) { return this.calendarBlocks.filter((item) => item.date === day); },
+    calendarEntriesForDay(day) {
+      const entries = [
+        ...this.blocksForDay(day).map((item) => ({ type: 'block', key: `block-${item.id}`, start: item.start_time, item })),
+        ...this.itemsForDay(day).map((item) => ({ type: 'booking', key: `booking-${item.id}`, start: item.start_time, item }))
+      ];
+      return entries.sort((left, right) => String(left.start || '').localeCompare(String(right.start || '')));
+    },
+    syncModalBodyLock() {
+      document.body.classList.toggle('modal-open', this.serviceModalOpen || this.reviewModalOpen || this.faqModalOpen);
+    },
+    handleKeydown(event) {
+      if (event.key !== 'Escape') return;
+      if (this.serviceModalOpen) this.closeServiceModal();
+      else if (this.reviewModalOpen) this.closeReviewModal();
+      else if (this.faqModalOpen) this.closeFaqModal();
+    },
 
     async login() {
       this.loggingIn = true;
@@ -107,6 +165,10 @@ createApp({
       this.services = [];
       this.reviews = [];
       this.faqs = [];
+      this.serviceModalOpen = false;
+      this.reviewModalOpen = false;
+      this.faqModalOpen = false;
+      this.syncModalBodyLock();
     },
 
     async refresh() {
@@ -118,8 +180,7 @@ createApp({
         if (this.filters.date) params.set('date', this.filters.date);
         if (this.filters.q) params.set('q', this.filters.q);
 
-        const start = this.calendarDays[0];
-        const end = this.calendarDays[this.calendarDays.length - 1];
+        const { start, end } = this.calendarRange;
 
         const [summary, bookings, blocks, services, today, calendar] = await Promise.all([
           api(`/admin/businesses/${window.App.config.businessId}/summary`, { token: this.token }),
@@ -178,8 +239,12 @@ createApp({
 
     debouncedRefresh() { clearTimeout(this.debounceHandle); this.debounceHandle = setTimeout(() => this.refresh(), 350); },
     clearFilters() { this.filters = { status: '', date: '', q: '' }; this.refresh(); },
-    setCalendarMode(mode) { this.calendarMode = mode; this.refresh(); },
-    moveCalendar(amount) { this.calendarDate = addDaysKey(this.calendarDate, this.calendarMode === 'week' ? amount * 7 : amount); this.refresh(); },
+    moveCalendar(amount) {
+      const focus = parseKey(this.calendarDate);
+      const next = new Date(focus.getFullYear(), focus.getMonth() + amount, 1);
+      this.calendarDate = this.dateKey(next);
+      this.refresh();
+    },
     goToday() { this.calendarDate = todayKey(); this.refresh(); },
 
     async setStatus(booking, status) {
@@ -255,7 +320,8 @@ createApp({
         });
         this.business = response.data || this.business;
         this.websiteForm = this.mapWebsiteForm(this.business);
-        this.toasts.success('Weboldal beállítások elmentve. A publikus oldal azonnal frissül.');
+        this.websitePreviewVersion += 1;
+        this.toasts.success('Weboldal beállítások elmentve. A publikus oldal és az előnézet frissült.');
       } catch (error) {
         this.toasts.error(`Weboldal mentése sikertelen: ${error.message}`);
       } finally {
@@ -296,15 +362,30 @@ createApp({
       }
     },
 
-    editReview(review) {
-      this.reviewForm = {
-        id: review.id,
-        author: review.author || '',
-        text: review.text || '',
-        rating: Number(review.rating || 5),
-        active: !!review.active,
-        sort_order: Number(review.sort_order || 0)
-      };
+    openReviewModal(review = null) {
+      if (review) {
+        this.reviewForm = {
+          id: review.id,
+          author: review.author || '',
+          text: review.text || '',
+          rating: Number(review.rating || 5),
+          active: !!review.active,
+          sort_order: Number(review.sort_order || 0)
+        };
+      } else {
+        this.resetReviewForm();
+      }
+      this.reviewModalOpen = true;
+      this.syncModalBodyLock();
+      this.$nextTick(() => this.$refs.reviewAuthorInput?.focus());
+    },
+
+    editReview(review) { this.openReviewModal(review); },
+
+    closeReviewModal() {
+      if (this.savingReview) return;
+      this.reviewModalOpen = false;
+      this.syncModalBodyLock();
     },
 
     resetReviewForm() {
@@ -321,6 +402,8 @@ createApp({
           body: JSON.stringify(this.reviewForm)
         });
         this.toasts.success(this.reviewForm.id ? 'Vélemény módosítva.' : 'Vélemény hozzáadva.');
+        this.reviewModalOpen = false;
+        this.syncModalBodyLock();
         this.resetReviewForm();
         await this.loadWebsite();
       } catch (error) {
@@ -341,14 +424,29 @@ createApp({
       }
     },
 
-    editFaq(faq) {
-      this.faqForm = {
-        id: faq.id,
-        question: faq.question || '',
-        answer: faq.answer || '',
-        active: !!faq.active,
-        sort_order: Number(faq.sort_order || 0)
-      };
+    openFaqModal(faq = null) {
+      if (faq) {
+        this.faqForm = {
+          id: faq.id,
+          question: faq.question || '',
+          answer: faq.answer || '',
+          active: !!faq.active,
+          sort_order: Number(faq.sort_order || 0)
+        };
+      } else {
+        this.resetFaqForm();
+      }
+      this.faqModalOpen = true;
+      this.syncModalBodyLock();
+      this.$nextTick(() => this.$refs.faqQuestionInput?.focus());
+    },
+
+    editFaq(faq) { this.openFaqModal(faq); },
+
+    closeFaqModal() {
+      if (this.savingFaq) return;
+      this.faqModalOpen = false;
+      this.syncModalBodyLock();
     },
 
     resetFaqForm() {
@@ -365,6 +463,8 @@ createApp({
           body: JSON.stringify(this.faqForm)
         });
         this.toasts.success(this.faqForm.id ? 'GYIK módosítva.' : 'GYIK elem hozzáadva.');
+        this.faqModalOpen = false;
+        this.syncModalBodyLock();
         this.resetFaqForm();
         await this.loadWebsite();
       } catch (error) {
@@ -385,20 +485,34 @@ createApp({
       }
     },
 
-    editService(service) {
-      this.serviceForm = {
-        id: service.id,
-        category: service.category || 'Altalanos',
-        name: service.name || '',
-        description: service.description || '',
-        image_url: service.image_url || '',
-        duration_minutes: service.duration_minutes || 45,
-        buffer_minutes: service.buffer_minutes ?? 10,
-        price_forint: service.price_cents === null || service.price_cents === undefined ? '' : Math.round(service.price_cents / 100),
-        active: !!service.active,
-        sort_order: service.sort_order || 0
-      };
-      this.activeTab = 'services';
+    openServiceModal(service = null) {
+      if (service) {
+        this.serviceForm = {
+          id: service.id,
+          category: service.category || 'Altalanos',
+          name: service.name || '',
+          description: service.description || '',
+          image_url: service.image_url || '',
+          duration_minutes: service.duration_minutes || 45,
+          buffer_minutes: service.buffer_minutes ?? 10,
+          price_forint: service.price_cents === null || service.price_cents === undefined ? '' : Math.round(service.price_cents / 100),
+          active: !!service.active,
+          sort_order: service.sort_order || 0
+        };
+      } else {
+        this.resetServiceForm();
+      }
+      this.serviceModalOpen = true;
+      this.syncModalBodyLock();
+      this.$nextTick(() => this.$refs.serviceNameInput?.focus());
+    },
+
+    editService(service) { this.openServiceModal(service); },
+
+    closeServiceModal() {
+      if (this.savingService) return;
+      this.serviceModalOpen = false;
+      this.syncModalBodyLock();
     },
 
     resetServiceForm() {
@@ -425,6 +539,8 @@ createApp({
         const path = this.serviceForm.id ? `/admin/services/${this.serviceForm.id}` : `/admin/businesses/${window.App.config.businessId}/services`;
         await api(path, { method: this.serviceForm.id ? 'PATCH' : 'POST', token: this.token, body: JSON.stringify(this.servicePayload()) });
         this.toasts.success(this.serviceForm.id ? 'Szolgáltatás módosítva.' : 'Új szolgáltatás felvéve.');
+        this.serviceModalOpen = false;
+        this.syncModalBodyLock();
         this.resetServiceForm();
         await this.refresh();
       } catch (error) { this.toasts.error(`Szolgáltatás mentése sikertelen: ${error.message}`); }

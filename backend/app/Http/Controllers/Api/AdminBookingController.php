@@ -81,7 +81,7 @@ class AdminBookingController extends Controller
         $start = CarbonImmutable::parse($validated['start'])->startOfDay();
         $end = CarbonImmutable::parse($validated['end'])->startOfDay();
 
-        abort_if($start->diffInDays($end) > 31, 422, 'Legfeljebb 31 nap kérhető le egyszerre.');
+        abort_if($start->diffInDays($end) > 41, 422, 'Legfeljebb 42 nap kérhető le egyszerre.');
 
         return response()->json([
             'data' => $business->bookings()

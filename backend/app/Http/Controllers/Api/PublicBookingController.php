@@ -236,8 +236,14 @@ class PublicBookingController extends Controller
 
     private function isDuplicateActiveSlot(QueryException $exception): bool
     {
-        return str_contains($exception->getMessage(), 'bookings_active_slot_key_unique')
-            || str_contains($exception->getMessage(), 'active_slot_key')
-            || str_contains((string) $exception->getCode(), '23000');
+        $errorInfo = $exception->errorInfo ?? [];
+        $sqlState = (string) ($errorInfo[0] ?? $exception->getCode());
+        $driverCode = (int) ($errorInfo[1] ?? 0);
+
+        return $sqlState === '23000'
+            && (
+                $driverCode === 1062
+                || str_contains($exception->getMessage(), 'bookings_active_slot_key_unique')
+            );
     }
 }

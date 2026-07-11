@@ -13,10 +13,15 @@ Route::prefix('v1')->group(function (): void {
     Route::get('/businesses/{business:slug}/slots', [PublicBookingController::class, 'slots']);
     Route::post('/businesses/{business:slug}/bookings', [PublicBookingController::class, 'store']);
 
-    Route::get('/bookings/{booking:manage_token}', [PublicBookingController::class, 'show']);
+   Route::get('/bookings/{booking:manage_token}', [PublicBookingController::class, 'show']);
+
+    Route::get(
+        '/bookings/{booking:manage_token}/slots',
+        [PublicBookingController::class, 'manageSlots']
+    );
+
     Route::post('/bookings/{booking:manage_token}/cancel', [PublicBookingController::class, 'cancel']);
     Route::post('/bookings/{booking:manage_token}/reschedule', [PublicBookingController::class, 'reschedule']);
-
     Route::post('/auth/login', [AuthController::class, 'login']);
     Route::post('/auth/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 
