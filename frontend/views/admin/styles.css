@@ -1,29 +1,50 @@
 .admin-shell { max-width: 1240px; }
 .admin-headline, .section-title, .calendar-toolbar { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; }
 .tabs { display:flex; gap:10px; margin:22px 0; flex-wrap:wrap; }
-.tabs button { border:1px solid var(--line); background:#fffaf3; border-radius:999px; padding:10px 16px; font-weight:800; cursor:pointer; color:var(--ink); }
+.tabs button { border:1px solid var(--line); background:#fffaf3; border-radius:999px; padding:10px 16px; font-weight:800; cursor:pointer; color:var(--ink); transition:transform .16s ease, border-color .16s ease, background .16s ease; }
+.tabs button:hover { transform:translateY(-1px); border-color:var(--ink); }
 .tabs button.active { background:var(--ink); color:white; }
 
-/* --- Egységes, egyoszlopos admin szekciók --- */
+/* --- Egységes admin szekciók --- */
 .admin-single-column { display:grid; gap:22px; }
-.today-panel, .calendar-panel, .block-panel, .form-panel, .service-list-panel { padding:24px; }
+.today-panel, .calendar-panel, .block-panel, .service-list-panel { padding:24px; }
 .today-list { display:grid; gap:10px; margin-top:16px; }
 .today-item, .service-admin-card { border:1px solid var(--line); border-radius:16px; padding:13px; background:#fffdf9; }
 .today-item { display:grid; gap:4px; }
+.today-item.clickable { cursor:pointer; transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease; }
+.today-item.clickable:hover { transform:translateY(-1px); box-shadow:var(--shadow-sm); border-color:var(--line-strong); }
 .today-item.cancelled, .service-admin-card.inactive { opacity:.6; }
 .today-item small, .service-admin-card small { color:var(--muted); }
 .inline-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
 
-/* --- Havi naptár --- */
-.month-calendar-panel { overflow:hidden; }
-.month-calendar-toolbar { align-items:center; margin-bottom:18px; }
+/* --- Okos havi / napi naptár --- */
+.smart-calendar-panel { overflow:hidden; }
+.smart-calendar-toolbar { align-items:flex-start; margin-bottom:18px; }
+.calendar-helper { max-width:62ch; margin-top:5px; font-size:13.5px; }
+.calendar-toolbar-right { min-width:min(520px, 48%); display:grid; gap:10px; justify-items:end; }
 .calendar-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
 .month-nav { width:40px; padding-left:0; padding-right:0; font-size:22px; line-height:1; }
+
+.booking-search-wrap { position:relative; width:min(460px, 100%); z-index:25; }
+.booking-search { width:100%; padding-right:18px; }
+.booking-search-results { position:absolute; top:calc(100% + 7px); left:0; right:0; max-height:330px; overflow:auto; border:1px solid var(--line); border-radius:14px; background:var(--paper-raised); box-shadow:var(--shadow-lg); padding:6px; }
+.booking-search-results button { width:100%; display:grid; gap:2px; padding:10px 11px; border:0; border-radius:10px; background:transparent; color:var(--ink); text-align:left; cursor:pointer; }
+.booking-search-results button:hover { background:var(--paper-sunken); }
+.booking-search-results strong { font-size:13px; }
+.booking-search-results span { color:var(--muted); font-size:11.5px; }
+
+.calendar-view-stage { min-height:300px; }
+.calendar-view-enter-active, .calendar-view-leave-active { transition:opacity .22s ease, transform .24s cubic-bezier(.2,.75,.25,1); }
+.calendar-view-enter-from { opacity:0; transform:translateY(14px) scale(.992); }
+.calendar-view-leave-to { opacity:0; transform:translateY(-10px) scale(.995); }
+
+/* --- Havi naptár --- */
 .month-weekdays { display:grid; grid-template-columns:repeat(7, minmax(0, 1fr)); border:1px solid var(--line); border-bottom:0; border-radius:16px 16px 0 0; overflow:hidden; background:var(--paper-sunken); }
 .month-weekdays span { padding:10px 8px; text-align:center; color:var(--muted); font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; }
 .month-calendar-grid { display:grid; grid-template-columns:repeat(7, minmax(0, 1fr)); border-top:1px solid var(--line); border-left:1px solid var(--line); border-radius:0 0 16px 16px; overflow:hidden; background:var(--line); }
-.month-day { min-width:0; min-height:154px; padding:10px; background:#fffdf9; border-right:1px solid var(--line); border-bottom:1px solid var(--line); transition:background .15s ease, box-shadow .15s ease; }
-.month-day:hover { background:#fffaf3; box-shadow:inset 0 0 0 1px rgba(226,163,59,.35); }
+.month-day { min-width:0; min-height:154px; padding:10px; background:#fffdf9; border-right:1px solid var(--line); border-bottom:1px solid var(--line); cursor:pointer; transition:background .16s ease, box-shadow .16s ease, transform .16s ease; }
+.month-day:hover, .month-day:focus-visible { background:#fffaf3; box-shadow:inset 0 0 0 2px rgba(226,163,59,.38); z-index:1; }
+.month-day:active { transform:scale(.985); }
 .month-day.outside-month { background:#f2ede4; color:#938b7d; }
 .month-day.outside-month .month-day-events { opacity:.72; }
 .month-day.today { background:linear-gradient(145deg, #fffdf9, #fff5e3); }
@@ -32,20 +53,61 @@
 .month-day.today .month-day-number { background:var(--ink); color:#fff; }
 .today-label { color:var(--amber-ink); font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; }
 .month-day-events { display:grid; gap:5px; }
-.month-event { min-width:0; display:flex; align-items:center; gap:6px; padding:6px 7px; border-radius:8px; font-size:11px; line-height:1.2; overflow:hidden; }
+.month-event { min-width:0; width:100%; display:flex; align-items:center; gap:6px; padding:6px 7px; border:0; border-radius:8px; font:inherit; font-size:11px; line-height:1.2; overflow:hidden; text-align:left; }
 .month-event span { flex:none; font-family:var(--font-mono); font-size:10px; opacity:.8; }
 .month-event strong { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:800; }
-.month-event.booking { background:var(--sage-soft); color:#355b49; border-left:3px solid var(--sage); }
+.month-event.booking { background:var(--sage-soft); color:#355b49; border-left:3px solid var(--sage); cursor:pointer; }
+.month-event.booking:hover { filter:brightness(.97); }
 .month-event.booking.completed { background:#e6e9f5; color:var(--ink); border-left-color:#596ca8; }
 .month-event.booking.cancelled { background:var(--rose-soft); color:var(--rose); border-left-color:var(--rose); opacity:.68; text-decoration:line-through; }
 .month-event.booking.no_show { background:#f4ead7; color:#7a5b22; border-left-color:#c99531; }
 .month-event.block { background:#eee4d4; color:#6d573d; border-left:3px solid #8b7255; }
 .month-more { padding:3px 6px; color:var(--muted); font-size:10.5px; font-weight:800; }
 
+/* --- Napi, órás-sávos naptár --- */
+.day-calendar-view { display:grid; gap:14px; }
+.day-calendar-controls { display:flex; align-items:flex-end; justify-content:space-between; gap:18px; flex-wrap:wrap; padding:14px; border:1px solid var(--line); border-radius:14px; background:#fffaf3; }
+.day-service-context { min-width:min(360px, 100%); }
+.day-service-context label { margin:0; }
+.day-service-context select { margin-top:6px; }
+.day-legend { display:flex; gap:14px; flex-wrap:wrap; color:var(--muted); font-size:11.5px; font-weight:700; }
+.day-legend span { display:inline-flex; align-items:center; gap:6px; }
+.legend-dot { width:10px; height:10px; display:inline-block; border-radius:3px; border:1px solid var(--line-strong); }
+.legend-dot.available { background:var(--amber-soft); border-color:var(--amber); }
+.legend-dot.booking { background:var(--sage-soft); border-color:var(--sage); }
+.legend-dot.block { background:#eee4d4; border-color:#8b7255; }
+.legend-dot.closed { background:#ece9e2; border-color:#d9d2c5; }
+.day-loading { min-height:260px; display:grid; place-items:center; color:var(--muted); }
+
+.day-timeline-scroller { max-height:720px; overflow:auto; border:1px solid var(--line); border-radius:16px; background:#fffdf9; scroll-behavior:smooth; }
+.day-timeline { position:relative; min-width:720px; background:linear-gradient(90deg, #f8f3ea 0 86px, transparent 86px); }
+.day-hour-row { position:absolute; left:0; right:0; height:64px; display:grid; grid-template-columns:86px 1fr; border-top:1px solid var(--line); }
+.day-hour-label { padding:6px 10px 0 0; text-align:right; color:var(--muted); font-family:var(--font-mono); font-size:11px; }
+.day-quarter-grid { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); height:100%; }
+.day-quarter-cell { position:relative; border:0; border-left:1px dashed rgba(205,192,163,.55); background:#ece9e2; color:var(--muted); cursor:not-allowed; transition:background .14s ease, box-shadow .14s ease, transform .12s ease; }
+.day-quarter-cell:first-child { border-left:1px solid var(--line); }
+.day-quarter-cell.working { background:#faf6ef; }
+.day-quarter-cell.available { background:linear-gradient(145deg, #fffaf3, var(--amber-soft)); cursor:pointer; }
+.day-quarter-cell.available:hover { background:#f8dfb4; box-shadow:inset 0 0 0 1px var(--amber); z-index:2; }
+.day-quarter-cell.available:active { transform:scale(.98); }
+.day-quarter-cell span { position:absolute; left:5px; top:4px; font-family:var(--font-mono); font-size:8.5px; opacity:.7; }
+
+.day-event { position:absolute; left:94px; right:14px; z-index:8; min-height:28px; padding:7px 10px; border:0; border-radius:10px; text-align:left; overflow:hidden; box-shadow:0 4px 12px rgba(28,37,65,.08); transition:transform .15s ease, box-shadow .15s ease, filter .15s ease; }
+.day-event strong, .day-event span { display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.day-event strong { font-size:11.5px; }
+.day-event span { margin-top:2px; font-size:10px; opacity:.78; }
+.day-booking-event { background:var(--sage-soft); color:#355b49; border-left:4px solid var(--sage); cursor:pointer; }
+.day-booking-event:hover { transform:translateX(2px); box-shadow:0 8px 20px rgba(28,37,65,.13); }
+.day-booking-event.completed { background:#e6e9f5; color:var(--ink); border-left-color:#596ca8; }
+.day-booking-event.cancelled { background:var(--rose-soft); color:var(--rose); border-left-color:var(--rose); opacity:.62; text-decoration:line-through; z-index:5; }
+.day-booking-event.no_show { background:#f4ead7; color:#7a5b22; border-left-color:#c99531; }
+.day-block-event { background:rgba(238,228,212,.92); color:#6d573d; border-left:4px solid #8b7255; z-index:7; pointer-events:none; }
+
 /* --- Blokkolás a naptár alatt --- */
 .block-panel { display:grid; gap:18px; }
-.block-lead { max-width:72ch; margin-top:6px; font-size:14px; }
-.block-form-grid { display:grid; grid-template-columns:1.05fr .75fr .75fr 1.45fr; gap:14px; }
+.block-lead { max-width:76ch; margin-top:6px; font-size:14px; }
+.block-form-grid { display:grid; grid-template-columns:1fr 1fr .72fr .72fr 1.25fr; gap:12px; }
+.block-reason-field { min-width:180px; }
 .block-list { display:grid; gap:10px; }
 .block-list-wide { margin-top:2px; padding-top:18px; border-top:1px solid var(--line); }
 .block-item { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:12px 14px; border:1px solid var(--line); border-radius:12px; background:#fffaf3; }
@@ -53,30 +115,32 @@
 .block-item .info span { color:var(--muted); font-size:12px; }
 .icon-btn { width:34px; height:34px; flex:none; border:1px solid var(--line); border-radius:50%; background:#fffdf9; color:var(--rose); cursor:pointer; font-size:18px; }
 
-/* --- Kézi foglalás --- */
-.admin-form-grid { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:16px; margin-top:18px; }
-.admin-form-grid .full { grid-column:1 / -1; }
-textarea { width:100%; border:1px solid var(--line); border-radius:12px; padding:12px 14px; font:inherit; color:var(--ink); background:#fffdf9; resize:vertical; }
-
 /* --- Szolgáltatások --- */
 .services-single-panel { width:100%; }
 .service-admin-list { display:grid; gap:12px; margin-top:18px; }
 .service-admin-card { display:flex; justify-content:space-between; gap:18px; align-items:flex-start; }
+.service-admin-main { min-width:0; display:flex; align-items:flex-start; gap:14px; }
+.service-admin-thumb { width:78px; height:62px; flex:none; border:1px solid var(--line); border-radius:12px; overflow:hidden; display:grid; place-items:center; background:linear-gradient(145deg, #efe7d7, #f8f3e9); color:var(--ink); font-family:var(--font-display); font-weight:700; }
+.service-admin-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
 .service-admin-card p { margin:6px 0 0; color:var(--muted); }
 .service-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
 .two-cols { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 .checkline { display:flex; align-items:center; gap:10px; font-weight:800; }
 .checkline input { width:auto; }
+.service-image-uploader { display:grid; grid-template-columns:150px 1fr; gap:16px; align-items:center; padding:14px; border:1px solid var(--line); border-radius:16px; background:#fffaf3; }
+.service-image-preview-large { width:150px; height:105px; border-radius:12px; overflow:hidden; display:grid; place-items:center; background:linear-gradient(145deg, #efe7d7, #f8f3e9); color:var(--ink); font-family:var(--font-display); font-weight:700; }
+.service-image-preview-large img { width:100%; height:100%; object-fit:cover; display:block; }
+.service-image-uploader p { margin:4px 0 0; color:var(--muted); font-size:12.5px; }
 
 /* --- Weboldal testreszabás --- */
 .admin-brand-mark { overflow:hidden; }
-.admin-brand-mark img { width:100%; height:100%; object-fit:cover; display:block; }
+.admin-brand-mark img { width:100%; height:100%; object-fit:contain; display:block; background:#fff; }
 .website-admin-section { display:grid; gap:22px; }
 .website-settings-panel, .website-preview-panel, .content-editor-panel { padding:24px; }
 .logo-editor { display:grid; grid-template-columns:100px 1fr; gap:18px; align-items:center; margin:20px 0 24px; padding:18px; border:1px solid var(--line); border-radius:16px; background:#fffaf3; }
 .logo-editor p { margin:4px 0 0; color:var(--muted); font-size:13px; }
 .logo-preview { width:88px; height:88px; border-radius:20px; display:grid; place-items:center; overflow:hidden; background:linear-gradient(155deg, var(--ink), #2c3968); color:white; font-family:var(--font-display); font-size:28px; font-weight:800; box-shadow:var(--shadow-sm); }
-.logo-preview img { width:100%; height:100%; object-fit:cover; display:block; }
+.logo-preview img { width:100%; height:100%; object-fit:contain; display:block; background:#fff; }
 .file-button { position:relative; overflow:hidden; }
 .file-button input { position:absolute; inset:0; opacity:0; cursor:pointer; }
 .website-form { display:grid; gap:14px; }
@@ -92,32 +156,55 @@ textarea { width:100%; border:1px solid var(--line); border-radius:12px; padding
 .content-admin-card p { margin:6px 0 0; color:var(--muted); font-size:13px; }
 .stars-admin { display:block; color:#d99a2b; font-size:12px; margin-top:3px; letter-spacing:.06em; }
 
-/* --- Modális szerkesztők --- */
+/* --- Modális szerkesztők + mini animáció --- */
 body.modal-open { overflow:hidden; }
-.modal-backdrop { position:fixed; inset:0; z-index:1000; display:grid; place-items:center; padding:24px; background:rgba(19, 24, 43, .58); backdrop-filter:blur(5px); }
-.modal-dialog { width:min(680px, 100%); max-height:min(88vh, 820px); overflow:auto; padding:24px; border:1px solid var(--line); border-radius:22px; background:var(--paper-raised); box-shadow:var(--shadow-lg); }
+.modal-backdrop { position:fixed; inset:0; z-index:1000; display:grid; place-items:center; padding:24px; background:rgba(19,24,43,.58); backdrop-filter:blur(5px); }
+.modal-dialog { width:min(680px, 100%); max-height:min(88vh, 860px); overflow:auto; padding:24px; border:1px solid var(--line); border-radius:22px; background:var(--paper-raised); box-shadow:var(--shadow-lg); }
 .modal-head { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; margin-bottom:20px; }
 .modal-close { width:40px; height:40px; flex:none; display:grid; place-items:center; border:1px solid var(--line); border-radius:50%; background:#fffaf3; color:var(--ink); font-size:23px; cursor:pointer; }
 .modal-form { display:grid; gap:14px; }
 .modal-actions { display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap; margin-top:6px; padding-top:16px; border-top:1px solid var(--line); }
+.modal-pop-enter-active, .modal-pop-leave-active { transition:opacity .18s ease; }
+.modal-pop-enter-active .modal-dialog, .modal-pop-leave-active .modal-dialog { transition:transform .24s cubic-bezier(.2,.8,.25,1), opacity .18s ease; }
+.modal-pop-enter-from, .modal-pop-leave-to { opacity:0; }
+.modal-pop-enter-from .modal-dialog { opacity:0; transform:translateY(18px) scale(.965); }
+.modal-pop-leave-to .modal-dialog { opacity:0; transform:translateY(10px) scale(.98); }
 
-@media (max-width: 1050px) {
+.booking-detail-modal { width:min(760px, 100%); }
+.booking-detail-hero { display:flex; justify-content:space-between; align-items:flex-start; gap:18px; padding:18px; border:1px solid var(--line); border-left:5px solid var(--sage); border-radius:16px; background:var(--sage-soft); }
+.booking-detail-hero.completed { border-left-color:#596ca8; background:#e6e9f5; }
+.booking-detail-hero.cancelled { border-left-color:var(--rose); background:var(--rose-soft); }
+.booking-detail-hero.no_show { border-left-color:#c99531; background:#f4ead7; }
+.booking-detail-hero div { display:grid; gap:4px; }
+.booking-detail-hero b { font-family:var(--font-mono); font-size:20px; }
+.detail-label { color:var(--muted); font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; }
+.booking-detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:18px 0 0; }
+.booking-detail-grid div { padding:13px; border:1px solid var(--line); border-radius:12px; background:#fffaf3; }
+.booking-detail-grid .full { grid-column:1 / -1; }
+.booking-detail-grid dt { color:var(--muted); font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; }
+.booking-detail-grid dd { margin:5px 0 0; font-weight:700; overflow-wrap:anywhere; }
+.booking-status-actions { justify-content:flex-start; }
+
+@media (max-width:1100px) {
+  .calendar-toolbar-right { min-width:46%; }
   .month-day { min-height:135px; padding:8px; }
   .month-event { padding:5px 6px; }
-  .block-form-grid { grid-template-columns:1fr 1fr; }
+  .block-form-grid { grid-template-columns:1fr 1fr 1fr; }
+  .block-reason-field { grid-column:span 2; }
 }
 
-@media (max-width: 980px) {
-  .admin-form-grid { grid-template-columns:1fr; }
+@media (max-width:980px) {
+  .smart-calendar-toolbar { flex-direction:column; }
+  .calendar-toolbar-right { width:100%; min-width:0; justify-items:stretch; }
+  .booking-search-wrap { width:100%; }
+  .calendar-actions { justify-content:flex-start; }
   .service-admin-card { flex-direction:column; }
   .content-management-grid { grid-template-columns:1fr; }
   .website-preview-frame-wrap iframe { height:640px; }
 }
 
-@media (max-width: 760px) {
-  .month-calendar-panel { padding-left:12px; padding-right:12px; }
-  .month-calendar-toolbar { align-items:flex-start; flex-direction:column; }
-  .calendar-actions { justify-content:flex-start; }
+@media (max-width:760px) {
+  .calendar-panel { padding-left:12px; padding-right:12px; }
   .month-weekdays span { padding:8px 2px; font-size:9px; }
   .month-day { min-height:92px; padding:5px; }
   .month-day-number { width:23px; height:23px; font-size:10px; }
@@ -127,15 +214,21 @@ body.modal-open { overflow:hidden; }
   .month-event strong { font-size:9px; }
   .month-more { font-size:9px; padding:2px; }
   .block-form-grid, .two-cols { grid-template-columns:1fr; }
-  .section-title { align-items:flex-start; flex-direction:column; }
-  .website-preview-frame-wrap iframe { height:520px; }
-  .logo-editor { grid-template-columns:1fr; }
+  .block-reason-field { grid-column:auto; }
+  .logo-editor, .service-image-uploader { grid-template-columns:1fr; }
+  .service-image-preview-large { width:100%; height:160px; }
+  .modal-backdrop { padding:10px; }
+  .modal-dialog { padding:18px; border-radius:18px; max-height:94vh; }
+  .booking-detail-grid { grid-template-columns:1fr; }
+  .booking-detail-grid .full { grid-column:auto; }
+  .day-calendar-controls { align-items:stretch; }
+  .day-timeline-scroller { max-height:640px; }
 }
 
-@media (max-width: 520px) {
-  .month-calendar-grid, .month-weekdays { min-width:640px; }
-  .month-calendar-panel { overflow-x:auto; }
-  .website-preview-frame-wrap iframe { height:460px; }
-  .modal-backdrop { padding:10px; }
-  .modal-dialog { padding:18px; border-radius:18px; }
+@media (max-width:560px) {
+  .admin-headline { flex-direction:column; }
+  .stat-row { grid-template-columns:1fr 1fr; }
+  .service-admin-main { flex-direction:column; }
+  .service-admin-thumb { width:100%; height:120px; }
+  .booking-detail-hero { flex-direction:column; }
 }

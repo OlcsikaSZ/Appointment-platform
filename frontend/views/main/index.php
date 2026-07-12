@@ -126,35 +126,118 @@
         </template>
 
         <template v-else-if="step === 2">
-          <h2 style="margin-top:6px;">Válassz napot</h2>
-          <div class="date-strip">
-            <button v-for="opt in dateOptions" :key="opt.key" class="date-pill" :class="{ selected: date === opt.key, today: isToday(opt.key) }" type="button" @click="pickDate(opt.key)">
-              <span class="dow">{{ opt.dow }}</span>
-              <span class="dnum">{{ opt.day }}</span>
-            </button>
-          </div>
-          <details class="date-custom">
-            <summary>Másik dátumot választanék</summary>
-            <input v-model="date" :min="today" type="date" @change="loadSlots" />
-          </details>
-
-          <h2 style="margin-top:26px;">Válassz időpontot</h2>
-          <div v-if="loadingSlots" class="slot-grid" style="margin-top:14px;">
-            <div class="skeleton" style="height:44px;" v-for="n in 8" :key="n"></div>
-          </div>
-          <p v-else-if="!slots.length" class="empty">Erre a napra nincs szabad időpont — próbálj másik dátumot.</p>
-          <template v-else>
-            <div v-for="[period, items] in groupedSlots" :key="period" class="slot-period">
-              <h4>{{ period }}</h4>
-              <div class="slot-grid">
-                <button v-for="slot in items" :key="slot.time" class="slot" :class="{ selected: selectedSlot && selectedSlot.time === slot.time }" type="button" @click="selectedSlot = slot">{{ slot.label }}</button>
+          <transition name="booking-calendar-view" mode="out-in">
+            <div v-if="bookingCalendarMode === 'month'" key="booking-month" class="public-booking-calendar-stage">
+              <div class="public-calendar-toolbar">
+                <div>
+                  <p class="eyebrow">Válassz napot</p>
+                  <h2>{{ publicMonthLabel }}</h2>
+                </div>
+                <div class="public-calendar-actions">
+                  <button class="button sm ghost" type="button" :disabled="!canMovePublicMonthBack" aria-label="Előző hónap" @click="movePublicMonth(-1)">‹</button>
+                  <button class="button sm" type="button" @click="goPublicCurrentMonth">Aktuális hónap</button>
+                  <button class="button sm ghost" type="button" aria-label="Következő hónap" @click="movePublicMonth(1)">›</button>
+                </div>
               </div>
+
+              <div class="public-month-weekdays" aria-hidden="true">
+                <span>H</span><span>K</span><span>Sze</span><span>Cs</span><span>P</span><span>Szo</span><span>V</span>
+              </div>
+              <div class="public-month-grid" role="grid" :aria-label="publicMonthLabel">
+                <button
+                  v-for="day in publicMonthDays"
+                  :key="day.key"
+                  type="button"
+                  class="public-month-day"
+                  :class="{ 'outside-month': !day.inCurrentMonth, today: day.isToday, disabled: day.disabled }"
+                  :disabled="day.disabled"
+                  @click="openBookingDay(day.key)"
+                >
+                  <span class="public-month-day-number">{{ day.dayNumber }}</span>
+                  <small v-if="day.isToday">Ma</small>
+                  <i v-if="!day.disabled" aria-hidden="true">Megnyitás →</i>
+                </button>
+              </div>
+              <p class="public-calendar-hint">Kattints egy napra, és finom animációval megnyílik az órás nézet a szabad időpontokkal.</p>
             </div>
-          </template>
+
+            <div v-else key="booking-day" class="public-booking-calendar-stage public-booking-day-stage">
+              <div class="public-day-toolbar">
+                <div>
+                  <p class="eyebrow">Választott nap</p>
+                  <h2>{{ publicDateLabel }}</h2>
+                </div>
+
+                <span class="public-selected-service">
+                  {{ selectedService?.name }} · {{ formatDuration(selectedService?.duration_minutes) }}
+                </span>
+              </div>
+
+              <div v-if="loadingSlots" class="public-calendar-loading">
+                <span class="spinner"></span>
+                <span>Szabad időpontok betöltése…</span>
+              </div>
+
+              <p v-else-if="!workingHours.length" class="empty">Ezen a napon nincs beállított nyitvatartás — válassz másik napot.</p>
+
+              <div v-else class="public-day-timeline">
+                <div v-for="hour in publicTimelineHours" :key="hour" class="public-hour-row">
+                  <span class="public-hour-label">{{ String(hour).padStart(2, '0') }}:00</span>
+                  <div class="public-quarter-grid">
+                    <button
+                      v-for="cell in quarterCellsForPublicHour(hour)"
+                      :key="cell.time"
+                      type="button"
+                      class="public-quarter-slot"
+                      :class="{ available: cell.available, selected: cell.selected }"
+                      :disabled="!cell.available"
+                      :title="cell.slot ? `${cell.slot.time}–${cell.slot.endTime}` : `${cell.time} — nem elérhető`"
+                      @click="pickPublicSlot(cell.slot)"
+                    >
+                      <template v-if="cell.available">
+                        <strong>{{ cell.time }}</strong>
+                        <small>{{ cell.slot.endTime }}-ig</small>
+                      </template>
+                      <span v-else>—</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <p v-if="!loadingSlots && workingHours.length && !slots.length" class="empty public-day-empty">Erre a napra nincs szabad időpont — lépj vissza, és válassz másik napot.</p>
+            </div>
+          </transition>
 
           <div class="button-row">
-            <button class="button" type="button" @click="goToStep(1)">Vissza</button>
-            <button class="button primary" type="button" :disabled="!selectedSlot" @click="goToStep(3)">Tovább az adataidra</button>
+            <!-- Havi nézetben vissza a szolgáltatásokhoz -->
+            <button
+              v-if="bookingCalendarMode === 'month'"
+              class="button"
+              type="button"
+              @click="goToStep(1)"
+            >
+              Vissza a szolgáltatásokhoz
+            </button>
+
+            <!-- Napi nézetben vissza a havi naptárhoz -->
+            <button
+              v-else
+              class="button"
+              type="button"
+              @click="backToBookingMonth"
+            >
+              ← Vissza a havi naptárhoz
+            </button>
+
+            <button
+              class="button primary"
+              type="button"
+              :disabled="!selectedSlot"
+              @click="goToStep(3)"
+            >
+              Tovább az adataidra
+            </button>
+
           </div>
         </template>
 

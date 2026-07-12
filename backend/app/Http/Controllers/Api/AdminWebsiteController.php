@@ -60,19 +60,12 @@ class AdminWebsiteController extends Controller
             'logo' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:3072'],
         ]);
 
-        $projectRoot = dirname(base_path());
-        $directory = $projectRoot.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'businesses';
-
+        $directory = storage_path('app/public/businesses');
         if (! is_dir($directory) && ! mkdir($directory, 0755, true) && ! is_dir($directory)) {
             abort(500, 'Nem sikerült létrehozni a logó mappáját.');
         }
 
-        if ($business->logo_path && str_starts_with(ltrim($business->logo_path, './'), 'uploads/businesses/')) {
-            $oldPath = $projectRoot.DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, ltrim($business->logo_path, './'));
-            if (is_file($oldPath)) {
-                @unlink($oldPath);
-            }
-        }
+        $this->deleteStoredLogo($business->logo_path);
 
         $file = $request->file('logo');
         $extension = strtolower($file->extension() ?: 'png');
@@ -87,15 +80,7 @@ class AdminWebsiteController extends Controller
     public function deleteLogo(Request $request, Business $business): JsonResponse
     {
         $this->authorizeBusiness($request, $business);
-
-        if ($business->logo_path && str_starts_with(ltrim($business->logo_path, './'), 'uploads/businesses/')) {
-            $projectRoot = dirname(base_path());
-            $oldPath = $projectRoot.DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, ltrim($business->logo_path, './'));
-            if (is_file($oldPath)) {
-                @unlink($oldPath);
-            }
-        }
-
+        $this->deleteStoredLogo($business->logo_path);
         $business->update(['logo_path' => null]);
 
         return response()->json(['data' => $this->businessPayload($business->fresh())]);
@@ -199,6 +184,25 @@ class AdminWebsiteController extends Controller
             'logoText' => $business->logo_text,
             'primaryColor' => $business->primary_color,
         ];
+    }
+
+    private function deleteStoredLogo(?string $logoPath): void
+    {
+        if (! $logoPath || ! str_starts_with(ltrim($logoPath, './'), 'uploads/businesses/')) {
+            return;
+        }
+
+        $filename = preg_replace('#^uploads/businesses/#', '', ltrim($logoPath, './'));
+        $paths = [
+            storage_path('app/public/businesses/'.$filename),
+            dirname(base_path()).DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'businesses'.DIRECTORY_SEPARATOR.$filename,
+        ];
+
+        foreach ($paths as $path) {
+            if (is_file($path)) {
+                @unlink($path);
+            }
+        }
     }
 
     private function monogram(string $name): string

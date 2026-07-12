@@ -56,10 +56,8 @@
 
       <div class="tabs">
         <button :class="{active: activeTab === 'calendar'}" @click="activeTab = 'calendar'">Naptár</button>
-        <button :class="{active: activeTab === 'manual'}" @click="activeTab = 'manual'">Kézi foglalás</button>
         <button :class="{active: activeTab === 'services'}" @click="activeTab = 'services'">Szolgáltatások</button>
         <button :class="{active: activeTab === 'website'}" @click="openWebsiteTab">Weboldal</button>
-        <button :class="{active: activeTab === 'list'}" @click="activeTab = 'list'">Lista</button>
       </div>
 
       <section v-if="activeTab === 'calendar'" class="admin-single-column">
@@ -67,75 +65,175 @@
           <div class="section-title"><div><p class="eyebrow">Mai foglalások</p><h2>Ki jön ma?</h2></div></div>
           <div v-if="!todayBookings.length" class="empty compact">Ma nincs aktív foglalás. Ritka nyugi, becsüld meg.</div>
           <div v-else class="today-list">
-            <article v-for="item in todayBookings" :key="item.id" class="today-item" :class="item.status">
+            <article v-for="item in todayBookings" :key="item.id" class="today-item clickable" :class="item.status" @click="openBookingModal(item)">
               <strong>{{ shortTime(item.start_time) }}–{{ shortTime(item.end_time) }}</strong>
               <span>{{ item.customer_name }} · {{ item.service_name }}</span>
               <small>{{ item.customer_contact }}<template v-if="item.customer_note"> · {{ item.customer_note }}</template></small>
               <div class="inline-actions" v-if="item.status === 'booked'">
-                <button class="button sm" @click="setStatus(item, 'completed')">Teljesítve</button>
-                <button class="button sm" @click="setStatus(item, 'no_show')">Nem jött el</button>
-                <button class="button sm danger" @click="setStatus(item, 'cancelled')">Lemondva</button>
+                <button class="button sm" @click.stop="setStatus(item, 'completed')">Teljesítve</button>
+                <button class="button sm" @click.stop="setStatus(item, 'no_show')">Nem jött el</button>
+                <button class="button sm danger" @click.stop="setStatus(item, 'cancelled')">Lemondva</button>
               </div>
             </article>
           </div>
         </div>
 
-        <div class="panel calendar-panel month-calendar-panel">
-          <div class="calendar-toolbar month-calendar-toolbar">
+        <div class="panel calendar-panel smart-calendar-panel">
+          <div class="calendar-toolbar smart-calendar-toolbar">
             <div>
               <p class="eyebrow">Naptár</p>
-              <h2>{{ currentMonthLabel }}</h2>
+              <h2>{{ calendarMode === 'month' ? currentMonthLabel : selectedDayLabel }}</h2>
+              <p class="lead calendar-helper">{{ calendarMode === 'month' ? 'Kattints egy napra a részletes órás nézethez.' : 'A foglalások és blokkolások valódi időtartamuk szerint jelennek meg.' }}</p>
             </div>
-            <div class="calendar-actions">
-              <button class="button sm ghost month-nav" type="button" aria-label="Előző hónap" @click="moveCalendar(-1)">‹</button>
-              <button class="button sm" type="button" @click="goToday">Aktuális hónap</button>
-              <button class="button sm ghost month-nav" type="button" aria-label="Következő hónap" @click="moveCalendar(1)">›</button>
-            </div>
-          </div>
 
-          <div class="month-weekdays" aria-hidden="true">
-            <span v-for="label in weekdayLabels" :key="label">{{ label }}</span>
-          </div>
-
-          <div class="month-calendar-grid" role="grid" :aria-label="currentMonthLabel">
-            <article
-              v-for="day in monthCalendarDays"
-              :key="day.key"
-              class="month-day"
-              :class="{ 'outside-month': !day.inCurrentMonth, today: day.isToday, 'has-entries': calendarEntriesForDay(day.key).length }"
-              role="gridcell"
-            >
-              <header class="month-day-head">
-                <span class="month-day-number">{{ day.dayNumber }}</span>
-                <span v-if="day.isToday" class="today-label">Ma</span>
-              </header>
-
-              <div class="month-day-events">
-                <template v-for="entry in calendarEntriesForDay(day.key).slice(0, 3)" :key="entry.key">
-                  <div
-                    v-if="entry.type === 'block'"
-                    class="month-event block"
-                    :title="`${shortTime(entry.item.start_time)}–${shortTime(entry.item.end_time)} · ${entry.item.reason || 'Blokkolva'}`"
-                  >
-                    <span>{{ shortTime(entry.item.start_time) }}</span>
-                    <strong>{{ entry.item.reason || 'Blokkolva' }}</strong>
-                  </div>
-                  <div
-                    v-else
-                    class="month-event booking"
-                    :class="entry.item.status"
-                    :title="`${shortTime(entry.item.start_time)} · ${entry.item.customer_name} · ${entry.item.service_name}`"
-                  >
-                    <span>{{ shortTime(entry.item.start_time) }}</span>
-                    <strong>{{ entry.item.customer_name }}</strong>
-                  </div>
-                </template>
-                <div v-if="calendarEntriesForDay(day.key).length > 3" class="month-more">
-                  +{{ calendarEntriesForDay(day.key).length - 3 }} további
+            <div class="calendar-toolbar-right">
+              <div class="booking-search-wrap">
+                <input v-model.trim="bookingSearch" class="booking-search" type="search" placeholder="Keresés név / telefon / e-mail / megjegyzés" />
+                <div v-if="bookingSearchResults.length" class="booking-search-results">
+                  <button v-for="item in bookingSearchResults" :key="item.id" type="button" @click="openBookingFromSearch(item)">
+                    <strong>{{ item.customer_name }}</strong>
+                    <span>{{ item.date }} · {{ shortTime(item.start_time) }} · {{ item.service_name }}</span>
+                  </button>
                 </div>
               </div>
-            </article>
+
+              <div v-if="calendarMode === 'month'" class="calendar-actions">
+                <button class="button sm ghost month-nav" type="button" aria-label="Előző hónap" @click="moveCalendar(-1)">‹</button>
+                <button class="button sm" type="button" @click="goToday">Aktuális hónap</button>
+                <button class="button sm ghost month-nav" type="button" aria-label="Következő hónap" @click="moveCalendar(1)">›</button>
+              </div>
+
+              <div v-else class="calendar-actions">
+                <button class="button sm" type="button" @click="backToMonth">← Vissza a hónaphoz</button>
+                <button class="button sm primary" type="button" @click="openManualModal()">+ Kézi foglalás</button>
+              </div>
+            </div>
           </div>
+
+          <transition name="calendar-view" mode="out-in">
+            <div v-if="calendarMode === 'month'" key="month" class="calendar-view-stage">
+              <div class="month-weekdays" aria-hidden="true">
+                <span v-for="label in weekdayLabels" :key="label">{{ label }}</span>
+              </div>
+
+              <div class="month-calendar-grid" role="grid" :aria-label="currentMonthLabel">
+                <article
+                  v-for="day in monthCalendarDays"
+                  :key="day.key"
+                  class="month-day"
+                  :class="{ 'outside-month': !day.inCurrentMonth, today: day.isToday, 'has-entries': calendarEntriesForDay(day.key).length }"
+                  role="gridcell"
+                  tabindex="0"
+                  @click="openDay(day.key)"
+                  @keydown.enter.prevent="openDay(day.key)"
+                  @keydown.space.prevent="openDay(day.key)"
+                >
+                  <header class="month-day-head">
+                    <span class="month-day-number">{{ day.dayNumber }}</span>
+                    <span v-if="day.isToday" class="today-label">Ma</span>
+                  </header>
+
+                  <div class="month-day-events">
+                    <template v-for="entry in calendarEntriesForDay(day.key).slice(0, 3)" :key="entry.key">
+                      <div
+                        v-if="entry.type === 'block'"
+                        class="month-event block"
+                        :title="`${shortTime(entry.item.start_time)}–${shortTime(entry.item.end_time)} · ${entry.item.reason || 'Blokkolva'}`"
+                      >
+                        <span>{{ shortTime(entry.item.start_time) }}</span>
+                        <strong>{{ entry.item.reason || 'Blokkolva' }}</strong>
+                      </div>
+                      <button
+                        v-else
+                        type="button"
+                        class="month-event booking"
+                        :class="entry.item.status"
+                        :title="`${shortTime(entry.item.start_time)} · ${entry.item.customer_name} · ${entry.item.service_name}`"
+                        @click.stop="openBookingModal(entry.item)"
+                      >
+                        <span>{{ shortTime(entry.item.start_time) }}</span>
+                        <strong>{{ entry.item.customer_name }}</strong>
+                      </button>
+                    </template>
+                    <div v-if="calendarEntriesForDay(day.key).length > 3" class="month-more">
+                      +{{ calendarEntriesForDay(day.key).length - 3 }} további
+                    </div>
+                  </div>
+                </article>
+              </div>
+            </div>
+
+            <div v-else key="day" class="calendar-view-stage day-calendar-view">
+              <div class="day-calendar-controls">
+                <div class="day-service-context">
+                  <label>Szabad helyek ehhez a szolgáltatáshoz
+                    <select v-model="timelineServiceId" @change="loadDayAvailability">
+                      <option v-for="service in services.filter(item => item.active)" :key="service.id" :value="service.id">{{ service.name }} · {{ service.duration_minutes }} perc</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="day-legend">
+                  <span><i class="legend-dot available"></i> Szabad</span>
+                  <span><i class="legend-dot booking"></i> Foglalás</span>
+                  <span><i class="legend-dot block"></i> Blokkolva</span>
+                  <span><i class="legend-dot closed"></i> Nem foglalható</span>
+                </div>
+              </div>
+
+              <div v-if="dayLoading" class="day-loading"><span class="spinner"></span> Napi naptár betöltése…</div>
+
+              <div v-else ref="dayTimelineScroller" class="day-timeline-scroller">
+                <div class="day-timeline" :style="{ height: dayTimelineHeight + 'px' }">
+                  <div
+                    v-for="hour in dayTimelineHours"
+                    :key="hour"
+                    class="day-hour-row"
+                    :style="{ top: (((hour * 60) - dayTimelineStartMinutes) / 60 * 64) + 'px' }"
+                  >
+                    <span class="day-hour-label">{{ String(hour).padStart(2, '0') }}:00</span>
+                    <div class="day-quarter-grid">
+                      <button
+                        v-for="cell in quarterCellsForHour(hour)"
+                        :key="cell.time"
+                        type="button"
+                        class="day-quarter-cell"
+                        :class="{ available: cell.available, working: cell.working, closed: !cell.working }"
+                        :disabled="!cell.available"
+                        :title="cell.available ? `${cell.time} — kézi foglalás létrehozása` : `${cell.time} — nem elérhető`"
+                        @click="openManualModal(cell.time)"
+                      >
+                        <span>{{ cell.time.slice(3) === '00' ? '' : cell.time }}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <button
+                    v-for="item in dayBookings"
+                    :key="`booking-${item.id}`"
+                    type="button"
+                    class="day-event day-booking-event"
+                    :class="item.status"
+                    :style="timelineEventStyle(item)"
+                    @click="openBookingModal(item)"
+                  >
+                    <strong>{{ shortTime(item.start_time) }}–{{ shortTime(item.end_time) }} · {{ item.customer_name }}</strong>
+                    <span>{{ item.service_name }}</span>
+                  </button>
+
+                  <div
+                    v-for="item in dayBlocks"
+                    :key="`block-${item.id}`"
+                    class="day-event day-block-event"
+                    :style="timelineEventStyle(item)"
+                    :title="item.reason || 'Blokkolva'"
+                  >
+                    <strong>{{ shortTime(item.start_time) }}–{{ shortTime(item.end_time) }}</strong>
+                    <span>{{ item.reason || 'Blokkolva' }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </transition>
         </div>
 
         <div class="panel block-panel">
@@ -143,38 +241,32 @@
             <div>
               <p class="eyebrow">Naptár lezárása</p>
               <h2>Időszak blokkolása</h2>
-              <p class="lead block-lead">Zárd le a naptárad egy adott napra, például szabadság vagy karbantartás miatt. A blokkolás azonnal megjelenik a havi naptárban is.</p>
+              <p class="lead block-lead">Adj meg kezdő és záró dátumot. A rendszer minden érintett napot blokkolja, és azonnal megjeleníti a havi és napi naptárban is.</p>
             </div>
           </div>
 
-          <div class="block-form-grid">
-            <label>Dátum <input v-model="block.date" type="date" /></label>
+          <div class="block-form-grid range-block-form-grid">
+            <label>Kezdő dátum <input v-model="block.start_date" type="date" @change="syncBlockDates" /></label>
+            <label>Záró dátum <input v-model="block.end_date" :min="block.start_date" type="date" /></label>
             <label>Kezdés <input v-model="block.start_time" type="time" /></label>
             <label>Vége <input v-model="block.end_time" type="time" /></label>
-            <label>Indoklás <input v-model.trim="block.reason" placeholder="pl. Szabadság" /></label>
+            <label class="block-reason-field">Indoklás <input v-model.trim="block.reason" placeholder="pl. Szabadság" /></label>
           </div>
           <button class="button primary" type="button" :disabled="blockingTime" @click="saveBlock">{{ blockingTime ? 'Mentés…' : 'Blokk mentése' }}</button>
 
-          <div v-if="blockedTimes.length" class="block-list block-list-wide">
-            <div v-for="item in blockedTimes" :key="item.id" class="block-item">
-              <div class="info"><strong>{{ item.date }} · {{ shortTime(item.start_time) }}–{{ shortTime(item.end_time) }}</strong><span>{{ item.reason || 'Nincs indoklás' }}</span></div>
-              <button class="icon-btn" type="button" title="Blokk törlése" @click="deleteBlock(item)">×</button>
+          <div v-if="blockGroups.length" class="block-list block-list-wide">
+            <div v-for="group in blockGroups" :key="group.signature + group.start_date + group.end_date" class="block-item">
+              <div class="info">
+                <strong>
+                  {{ group.start_date }}<template v-if="group.end_date !== group.start_date"> – {{ group.end_date }}</template>
+                  · {{ shortTime(group.start_time) }}–{{ shortTime(group.end_time) }}
+                </strong>
+                <span>{{ group.reason || 'Nincs indoklás' }}<template v-if="group.items.length > 1"> · {{ group.items.length }} nap</template></span>
+              </div>
+              <button class="icon-btn" type="button" title="Blokkolás törlése" @click="deleteBlockGroup(group)">×</button>
             </div>
           </div>
         </div>
-      </section>
-
-      <section v-if="activeTab === 'manual'" class="panel form-panel">
-        <p class="eyebrow">Admin foglalás</p><h2>Kézi foglalás felvétele</h2>
-        <form class="admin-form-grid" @submit.prevent="saveManualBooking">
-          <label>Szolgáltatás <select v-model="manual.service_id" @change="loadSlots" required><option value="" disabled>Válassz szolgáltatást</option><option v-for="service in services.filter(s => s.active)" :key="service.id" :value="service.id">{{ service.name }} · {{ service.duration_minutes }} perc</option></select></label>
-          <label>Dátum <input v-model="manual.date" type="date" required @change="loadSlots" /></label>
-          <label>Időpont <select v-model="manual.time" required><option value="" disabled>Nincs szabad időpont</option><option v-for="slot in slots" :key="slot.time" :value="slot.time">{{ slot.time }}–{{ slot.endTime }}</option></select></label>
-          <label>Vendég neve <input v-model.trim="manual.customer_name" required placeholder="pl. Kovács Anna" /></label>
-          <label>Telefon / e-mail <input v-model.trim="manual.customer_contact" required placeholder="+36... vagy email" /></label>
-          <label class="full">Ügyfél megjegyzés <textarea v-model.trim="manual.customer_note" rows="4" placeholder="pl. kapucsengő, extra kérés, előzmény"></textarea></label>
-          <div class="full"><button class="button primary" :disabled="savingManual || !manual.time">{{ savingManual ? 'Mentés…' : 'Foglalás mentése' }}</button></div>
-        </form>
       </section>
 
       <section v-if="activeTab === 'services'" class="panel service-list-panel services-single-panel">
@@ -184,13 +276,18 @@
         </div>
         <div class="service-admin-list">
           <article v-for="service in services" :key="service.id" class="service-admin-card" :class="{inactive: !service.active}">
-            <div><strong>{{ service.name }}</strong><small>{{ service.category }} · {{ service.duration_minutes }} perc · {{ price(service) || 'Nincs ár' }}</small><p>{{ service.description }}</p></div>
+            <div class="service-admin-main">
+              <div class="service-admin-thumb">
+                <img v-if="service.image_url" :src="service.image_url" :alt="service.name" />
+                <span v-else>{{ monogram(service.name) || '•' }}</span>
+              </div>
+              <div><strong>{{ service.name }}</strong><small>{{ service.category }} · {{ service.duration_minutes }} perc · {{ price(service) || 'Nincs ár' }}</small><p>{{ service.description }}</p></div>
+            </div>
             <div class="service-actions"><button class="button sm" @click="moveService(service, -1)">↑</button><button class="button sm" @click="moveService(service, 1)">↓</button><button class="button sm" @click="editService(service)">Szerkesztés</button><button class="button sm" @click="toggleService(service)">{{ service.active ? 'Inaktiválás' : 'Aktiválás' }}</button></div>
           </article>
           <p v-if="!services.length" class="empty compact">Még nincs szolgáltatás.</p>
         </div>
       </section>
-
 
       <section v-if="activeTab === 'website'" class="website-admin-section">
         <section class="panel website-settings-panel">
@@ -219,23 +316,19 @@
               <label>Cégnév <input v-model.trim="websiteForm.name" required maxlength="160" /></label>
               <label>Rövid alcím <input v-model.trim="websiteForm.tagline" maxlength="240" /></label>
             </div>
-
             <label>Hero főcím <input v-model.trim="websiteForm.hero_title" maxlength="220" placeholder="Egyszerű foglalás. Megbízható szolgáltatás." /></label>
             <label>Hero leírás <textarea v-model.trim="websiteForm.hero_text" rows="3" maxlength="1200"></textarea></label>
-
             <div class="two-cols">
               <label>Bemutatkozás címe <input v-model.trim="websiteForm.about_title" maxlength="160" /></label>
               <label>Telefonszám <input v-model.trim="websiteForm.phone" maxlength="80" /></label>
             </div>
             <label>Bemutatkozó szöveg <textarea v-model.trim="websiteForm.about_text" rows="6" maxlength="4000"></textarea></label>
-
             <div class="two-cols">
               <label>E-mail <input v-model.trim="websiteForm.email" type="email" maxlength="160" /></label>
               <label>Cím <input v-model.trim="websiteForm.address" maxlength="255" /></label>
             </div>
             <label>Nyitvatartás <textarea v-model.trim="websiteForm.opening_hours" rows="4" maxlength="2000" placeholder="Hétfő–Péntek: 09:00–17:00"></textarea></label>
             <label>Google Maps link <input v-model.trim="websiteForm.google_maps_url" type="url" maxlength="2000" placeholder="https://www.google.com/maps/..." /></label>
-
             <button class="button primary" type="submit" :disabled="savingWebsite">{{ savingWebsite ? 'Mentés…' : 'Weboldal beállítások mentése' }}</button>
           </form>
         </section>
@@ -257,7 +350,6 @@
         <div class="content-management-grid">
           <section class="panel content-editor-panel">
             <div class="section-title"><div><p class="eyebrow">Vélemények</p><h2>Bizalomépítő visszajelzések</h2></div><button class="button sm" type="button" @click="openReviewModal()">Új vélemény</button></div>
-
             <div class="content-admin-list">
               <article v-for="review in reviews" :key="review.id" class="content-admin-card" :class="{inactive: !review.active}">
                 <div><strong>{{ review.author }}</strong><span class="stars-admin">{{ '★'.repeat(review.rating) }}</span><p>{{ review.text }}</p></div>
@@ -269,7 +361,6 @@
 
           <section class="panel content-editor-panel">
             <div class="section-title"><div><p class="eyebrow">GYIK</p><h2>Gyakori kérdések</h2></div><button class="button sm" type="button" @click="openFaqModal()">Új kérdés</button></div>
-
             <div class="content-admin-list">
               <article v-for="faq in faqs" :key="faq.id" class="content-admin-card" :class="{inactive: !faq.active}">
                 <div><strong>{{ faq.question }}</strong><p>{{ faq.answer }}</p></div>
@@ -280,73 +371,143 @@
           </section>
         </div>
       </section>
-
-      <section v-if="activeTab === 'list'">
-        <div class="admin-toolbar">
-          <div class="filter-row">
-            <select v-model="filters.status" @change="refresh"><option value="">Minden státusz</option><option value="booked">Foglalva</option><option value="completed">Teljesítve</option><option value="cancelled">Lemondva</option><option value="no_show">Nem jelent meg</option></select>
-            <input v-model="filters.date" type="date" @change="refresh" />
-            <input v-model.trim="filters.q" type="text" placeholder="Keresés név / telefon / email / megjegyzés" @input="debouncedRefresh" />
-            <button class="button ghost sm" type="button" @click="clearFilters">Szűrők törlése</button>
-          </div>
-        </div>
-        <div class="table-wrap">
-          <p v-if="!loading && !bookings.length" class="empty">Nincs a szűrésnek megfelelő foglalás.</p>
-          <table v-else><thead><tr><th>Dátum</th><th>Idő</th><th>Szolgáltatás</th><th>Vendég</th><th>Megjegyzés</th><th>Státusz</th><th>Műveletek</th></tr></thead><tbody>
-            <tr v-for="item in bookings" :key="item.id"><td class="mono">{{ item.date }}</td><td class="mono">{{ shortTime(item.start_time) }}–{{ shortTime(item.end_time) }}</td><td>{{ item.service_name }}</td><td class="customer-cell"><strong>{{ item.customer_name }}</strong><small>{{ item.customer_contact }}</small></td><td>{{ item.customer_note || '—' }}</td><td><span class="badge" :class="item.status">{{ statusLabel(item.status) }}</span></td><td class="actions-cell"><button v-if="item.status === 'booked'" class="button sm" @click="setStatus(item, 'completed')">Teljesítve</button><button v-if="item.status === 'booked'" class="button sm" @click="setStatus(item, 'no_show')">Nem jött el</button><button v-if="item.status === 'booked'" class="button sm danger" @click="setStatus(item, 'cancelled')">Lemondás</button></td></tr>
-          </tbody></table>
-        </div>
-      </section>
     </main>
 
-    <div v-if="serviceModalOpen" class="modal-backdrop" @click.self="closeServiceModal">
-      <section class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="serviceModalTitle">
-        <div class="modal-head">
-          <div><p class="eyebrow">{{ serviceForm.id ? 'Szerkesztés' : 'Új szolgáltatás' }}</p><h2 id="serviceModalTitle">{{ serviceForm.id ? serviceForm.name : 'Szolgáltatás felvétele' }}</h2></div>
-          <button class="modal-close" type="button" aria-label="Bezárás" @click="closeServiceModal">×</button>
-        </div>
-        <form class="modal-form" @submit.prevent="saveService">
-          <label>Név <input ref="serviceNameInput" v-model.trim="serviceForm.name" required /></label>
-          <label>Kategória <input v-model.trim="serviceForm.category" /></label>
-          <label>Leírás <textarea v-model.trim="serviceForm.description" rows="3"></textarea></label>
-          <label>Szolgáltatás kép URL <input v-model.trim="serviceForm.image_url" type="url" placeholder="https://... (nem kötelező)" /></label>
-          <div class="two-cols"><label>Időtartam / perc <input v-model.number="serviceForm.duration_minutes" type="number" min="5" required /></label><label>Puffer / perc <input v-model.number="serviceForm.buffer_minutes" type="number" min="0" /></label></div>
-          <div class="two-cols"><label>Ár / Ft <input v-model.number="serviceForm.price_forint" type="number" min="0" placeholder="pl. 12000" /></label><label>Sorrend <input v-model.number="serviceForm.sort_order" type="number" min="0" /></label></div>
-          <label class="checkline"><input v-model="serviceForm.active" type="checkbox" /> Aktív, foglalható szolgáltatás</label>
-          <div class="modal-actions"><button class="button" type="button" @click="closeServiceModal">Mégse</button><button class="button primary" :disabled="savingService">{{ savingService ? 'Mentés…' : 'Szolgáltatás mentése' }}</button></div>
-        </form>
-      </section>
-    </div>
+    <transition name="modal-pop">
+      <div v-if="bookingModalOpen && selectedBooking" class="modal-backdrop" @click.self="closeBookingModal">
+        <section class="modal-dialog booking-detail-modal" role="dialog" aria-modal="true" aria-labelledby="bookingModalTitle">
+          <div class="modal-head">
+            <div><p class="eyebrow">Foglalás kezelése</p><h2 id="bookingModalTitle">{{ selectedBooking.customer_name }}</h2></div>
+            <button class="modal-close" type="button" aria-label="Bezárás" @click="closeBookingModal">×</button>
+          </div>
 
-    <div v-if="reviewModalOpen" class="modal-backdrop" @click.self="closeReviewModal">
-      <section class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="reviewModalTitle">
-        <div class="modal-head">
-          <div><p class="eyebrow">Vélemények</p><h2 id="reviewModalTitle">{{ reviewForm.id ? 'Vélemény szerkesztése' : 'Új vélemény' }}</h2></div>
-          <button class="modal-close" type="button" aria-label="Bezárás" @click="closeReviewModal">×</button>
-        </div>
-        <form class="modal-form" @submit.prevent="saveReview">
-          <div class="two-cols"><label>Név <input ref="reviewAuthorInput" v-model.trim="reviewForm.author" required maxlength="120" /></label><label>Értékelés <select v-model.number="reviewForm.rating"><option :value="5">5 csillag</option><option :value="4">4 csillag</option><option :value="3">3 csillag</option><option :value="2">2 csillag</option><option :value="1">1 csillag</option></select></label></div>
-          <label>Szöveg <textarea v-model.trim="reviewForm.text" rows="5" required maxlength="1200"></textarea></label>
-          <div class="two-cols"><label>Sorrend <input v-model.number="reviewForm.sort_order" type="number" min="0" max="1000" /></label><label class="checkline"><input v-model="reviewForm.active" type="checkbox" /> Megjelenik a weboldalon</label></div>
-          <div class="modal-actions"><button class="button" type="button" @click="closeReviewModal">Mégse</button><button class="button primary" :disabled="savingReview">{{ savingReview ? 'Mentés…' : 'Vélemény mentése' }}</button></div>
-        </form>
-      </section>
-    </div>
+          <div class="booking-detail-hero" :class="selectedBooking.status">
+            <div><span class="detail-label">Időpont</span><strong>{{ formatDateLong(selectedBooking.date) }}</strong><b>{{ shortTime(selectedBooking.start_time) }}–{{ shortTime(selectedBooking.end_time) }}</b></div>
+            <span class="badge" :class="selectedBooking.status">{{ statusLabel(selectedBooking.status) }}</span>
+          </div>
 
-    <div v-if="faqModalOpen" class="modal-backdrop" @click.self="closeFaqModal">
-      <section class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="faqModalTitle">
-        <div class="modal-head">
-          <div><p class="eyebrow">GYIK</p><h2 id="faqModalTitle">{{ faqForm.id ? 'GYIK szerkesztése' : 'Új GYIK elem' }}</h2></div>
-          <button class="modal-close" type="button" aria-label="Bezárás" @click="closeFaqModal">×</button>
-        </div>
-        <form class="modal-form" @submit.prevent="saveFaq">
-          <label>Kérdés <input ref="faqQuestionInput" v-model.trim="faqForm.question" required maxlength="255" /></label>
-          <label>Válasz <textarea v-model.trim="faqForm.answer" rows="6" required maxlength="3000"></textarea></label>
-          <div class="two-cols"><label>Sorrend <input v-model.number="faqForm.sort_order" type="number" min="0" max="1000" /></label><label class="checkline"><input v-model="faqForm.active" type="checkbox" /> Megjelenik a weboldalon</label></div>
-          <div class="modal-actions"><button class="button" type="button" @click="closeFaqModal">Mégse</button><button class="button primary" :disabled="savingFaq">{{ savingFaq ? 'Mentés…' : 'GYIK mentése' }}</button></div>
-        </form>
-      </section>
-    </div>
+          <dl class="booking-detail-grid">
+            <div><dt>Szolgáltatás</dt><dd>{{ selectedBooking.service_name }}</dd></div>
+            <div><dt>Vendég</dt><dd>{{ selectedBooking.customer_name }}</dd></div>
+            <div><dt>Elérhetőség</dt><dd>{{ selectedBooking.customer_contact }}</dd></div>
+            <div><dt>Foglalt idő</dt><dd>{{ shortTime(selectedBooking.start_time) }}–{{ shortTime(selectedBooking.end_time) }}</dd></div>
+            <div class="full"><dt>Megjegyzés</dt><dd>{{ selectedBooking.customer_note || 'Nincs megjegyzés.' }}</dd></div>
+          </dl>
+
+          <div class="modal-actions booking-status-actions">
+            <button class="button" type="button" @click="copyManageLink(selectedBooking)">Kezelő link másolása</button>
+            <template v-if="selectedBooking.status === 'booked'">
+              <button class="button" type="button" @click="setStatus(selectedBooking, 'completed')">Teljesítve</button>
+              <button class="button" type="button" @click="setStatus(selectedBooking, 'no_show')">Nem jött el</button>
+              <button class="button danger" type="button" @click="setStatus(selectedBooking, 'cancelled')">Lemondás</button>
+            </template>
+            <button v-else class="button primary" type="button" @click="setStatus(selectedBooking, 'booked')">Visszaállítás aktívra</button>
+          </div>
+        </section>
+      </div>
+    </transition>
+
+    <transition name="modal-pop">
+      <div v-if="manualModalOpen" class="modal-backdrop" @click.self="closeManualModal">
+        <section class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="manualModalTitle">
+          <div class="modal-head">
+            <div><p class="eyebrow">Admin foglalás</p><h2 id="manualModalTitle">Kézi foglalás felvétele</h2></div>
+            <button class="modal-close" type="button" aria-label="Bezárás" @click="closeManualModal">×</button>
+          </div>
+          <form class="modal-form" @submit.prevent="saveManualBooking">
+            <label>Szolgáltatás
+              <select v-model="manual.service_id" required @change="loadManualSlots()">
+                <option value="" disabled>Válassz szolgáltatást</option>
+                <option v-for="service in services.filter(item => item.active)" :key="service.id" :value="service.id">{{ service.name }} · {{ service.duration_minutes }} perc</option>
+              </select>
+            </label>
+            <div class="two-cols">
+              <label>Dátum <input v-model="manual.date" type="date" required @change="loadManualSlots()" /></label>
+              <label>Időpont
+                <select v-model="manual.time" required>
+                  <option value="" disabled>Nincs szabad időpont</option>
+                  <option v-for="slot in manualSlots" :key="slot.time" :value="slot.time">{{ slot.time }}–{{ slot.endTime }}</option>
+                </select>
+              </label>
+            </div>
+            <label>Vendég neve <input ref="manualNameInput" v-model.trim="manual.customer_name" required placeholder="pl. Kovács Anna" /></label>
+            <label>Telefon / e-mail <input v-model.trim="manual.customer_contact" required placeholder="+36... vagy e-mail" /></label>
+            <label>Ügyfél megjegyzés <textarea v-model.trim="manual.customer_note" rows="4" placeholder="pl. kapucsengő, extra kérés, előzmény"></textarea></label>
+            <div class="modal-actions"><button class="button" type="button" @click="closeManualModal">Mégse</button><button class="button primary" :disabled="savingManual || !manual.time">{{ savingManual ? 'Mentés…' : 'Foglalás mentése' }}</button></div>
+          </form>
+        </section>
+      </div>
+    </transition>
+
+    <transition name="modal-pop">
+      <div v-if="serviceModalOpen" class="modal-backdrop" @click.self="closeServiceModal">
+        <section class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="serviceModalTitle">
+          <div class="modal-head">
+            <div><p class="eyebrow">{{ serviceForm.id ? 'Szerkesztés' : 'Új szolgáltatás' }}</p><h2 id="serviceModalTitle">{{ serviceForm.id ? serviceForm.name : 'Szolgáltatás felvétele' }}</h2></div>
+            <button class="modal-close" type="button" aria-label="Bezárás" @click="closeServiceModal">×</button>
+          </div>
+          <form class="modal-form" @submit.prevent="saveService">
+            <label>Név <input ref="serviceNameInput" v-model.trim="serviceForm.name" required /></label>
+            <label>Kategória <input v-model.trim="serviceForm.category" /></label>
+            <label>Leírás <textarea v-model.trim="serviceForm.description" rows="3"></textarea></label>
+
+            <div class="service-image-uploader">
+              <div class="service-image-preview-large">
+                <img v-if="serviceImagePreview" :src="serviceImagePreview" :alt="serviceForm.name || 'Szolgáltatás kép'" />
+                <span v-else>{{ monogram(serviceForm.name) || 'KÉP' }}</span>
+              </div>
+              <div>
+                <strong>Szolgáltatás képe</strong>
+                <p>JPG, PNG vagy WebP, legfeljebb 5 MB. A kép az uploads tárhelyre kerül.</p>
+                <div class="inline-actions">
+                  <label class="button sm file-button">Kép kiválasztása<input type="file" accept="image/jpeg,image/png,image/webp" @change="onServiceImageSelected" /></label>
+                  <button v-if="serviceImagePreview" class="button sm danger" type="button" :disabled="uploadingServiceImage" @click="deleteServiceImage">Kép törlése</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="two-cols"><label>Időtartam / perc <input v-model.number="serviceForm.duration_minutes" type="number" min="5" required /></label><label>Puffer / perc <input v-model.number="serviceForm.buffer_minutes" type="number" min="0" /></label></div>
+            <div class="two-cols"><label>Ár / Ft <input v-model.number="serviceForm.price_forint" type="number" min="0" placeholder="pl. 12000" /></label><label>Sorrend <input v-model.number="serviceForm.sort_order" type="number" min="0" /></label></div>
+            <label class="checkline"><input v-model="serviceForm.active" type="checkbox" /> Aktív, foglalható szolgáltatás</label>
+            <div class="modal-actions"><button class="button" type="button" @click="closeServiceModal">Mégse</button><button class="button primary" :disabled="savingService || uploadingServiceImage">{{ savingService ? 'Mentés…' : 'Szolgáltatás mentése' }}</button></div>
+          </form>
+        </section>
+      </div>
+    </transition>
+
+    <transition name="modal-pop">
+      <div v-if="reviewModalOpen" class="modal-backdrop" @click.self="closeReviewModal">
+        <section class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="reviewModalTitle">
+          <div class="modal-head">
+            <div><p class="eyebrow">Vélemények</p><h2 id="reviewModalTitle">{{ reviewForm.id ? 'Vélemény szerkesztése' : 'Új vélemény' }}</h2></div>
+            <button class="modal-close" type="button" aria-label="Bezárás" @click="closeReviewModal">×</button>
+          </div>
+          <form class="modal-form" @submit.prevent="saveReview">
+            <div class="two-cols"><label>Név <input ref="reviewAuthorInput" v-model.trim="reviewForm.author" required maxlength="120" /></label><label>Értékelés <select v-model.number="reviewForm.rating"><option :value="5">5 csillag</option><option :value="4">4 csillag</option><option :value="3">3 csillag</option><option :value="2">2 csillag</option><option :value="1">1 csillag</option></select></label></div>
+            <label>Szöveg <textarea v-model.trim="reviewForm.text" rows="5" required maxlength="1200"></textarea></label>
+            <div class="two-cols"><label>Sorrend <input v-model.number="reviewForm.sort_order" type="number" min="0" max="1000" /></label><label class="checkline"><input v-model="reviewForm.active" type="checkbox" /> Megjelenik a weboldalon</label></div>
+            <div class="modal-actions"><button class="button" type="button" @click="closeReviewModal">Mégse</button><button class="button primary" :disabled="savingReview">{{ savingReview ? 'Mentés…' : 'Vélemény mentése' }}</button></div>
+          </form>
+        </section>
+      </div>
+    </transition>
+
+    <transition name="modal-pop">
+      <div v-if="faqModalOpen" class="modal-backdrop" @click.self="closeFaqModal">
+        <section class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="faqModalTitle">
+          <div class="modal-head">
+            <div><p class="eyebrow">GYIK</p><h2 id="faqModalTitle">{{ faqForm.id ? 'GYIK szerkesztése' : 'Új GYIK elem' }}</h2></div>
+            <button class="modal-close" type="button" aria-label="Bezárás" @click="closeFaqModal">×</button>
+          </div>
+          <form class="modal-form" @submit.prevent="saveFaq">
+            <label>Kérdés <input ref="faqQuestionInput" v-model.trim="faqForm.question" required maxlength="255" /></label>
+            <label>Válasz <textarea v-model.trim="faqForm.answer" rows="6" required maxlength="3000"></textarea></label>
+            <div class="two-cols"><label>Sorrend <input v-model.number="faqForm.sort_order" type="number" min="0" max="1000" /></label><label class="checkline"><input v-model="faqForm.active" type="checkbox" /> Megjelenik a weboldalon</label></div>
+            <div class="modal-actions"><button class="button" type="button" @click="closeFaqModal">Mégse</button><button class="button primary" :disabled="savingFaq">{{ savingFaq ? 'Mentés…' : 'GYIK mentése' }}</button></div>
+          </form>
+        </section>
+      </div>
+    </transition>
   </div>
 
   <script src="<?= asset('assets/config.js') ?>"></script>

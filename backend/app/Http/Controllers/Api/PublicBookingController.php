@@ -83,6 +83,38 @@ class PublicBookingController extends Controller
         ]);
     }
 
+    /**
+     * Nyilvános napi elérhetőség a naptáras foglalóhoz.
+     * Ügyféladatot nem ad vissza: csak a szabad slotokat és az adott napi nyitvatartást.
+     */
+    public function availability(Request $request, Business $business): JsonResponse
+    {
+        abort_unless($business->active, 404);
+
+        $validated = $request->validate([
+            'service_id' => ['required', 'integer', Rule::exists('services', 'id')->where(fn ($query) => $query->where('business_id', $business->id)->where('active', true))],
+            'date' => ['required', 'date_format:Y-m-d'],
+        ]);
+
+        $service = Service::where('business_id', $business->id)
+            ->where('active', true)
+            ->findOrFail($validated['service_id']);
+
+        $day = \Carbon\CarbonImmutable::parse($validated['date'], $business->timezone)->startOfDay();
+        $weekday = (int) $day->dayOfWeek;
+
+        return response()->json([
+            'data' => [
+                'date' => $validated['date'],
+                'slots' => $this->slotService->slotsFor($business, $service, $validated['date']),
+                'workingHours' => $business->workingHours()
+                    ->where('weekday', $weekday)
+                    ->orderBy('start_time')
+                    ->get(['start_time', 'end_time']),
+            ],
+        ]);
+    }
+
     public function store(Request $request, Business $business): JsonResponse
     {
         $validated = $request->validate([

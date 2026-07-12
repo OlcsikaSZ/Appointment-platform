@@ -25,7 +25,7 @@ class AdminBookingController extends Controller
     public function index(Request $request, Business $business): JsonResponse
     {
         $filters = $request->validate([
-            'status' => ['nullable', Rule::in(['booked', 'cancelled', 'completed', 'no_show'])],
+            'status' => ['nullable', Rule::in(Booking::STATUSES)],
             'date' => ['nullable', 'date_format:Y-m-d'],
             'q' => ['nullable', 'string', 'max:120'],
         ]);
@@ -43,7 +43,7 @@ class AdminBookingController extends Controller
                 ))
                 ->orderByDesc('date')
                 ->orderByDesc('start_time')
-                ->limit(300)
+                ->limit(500)
                 ->get(),
         ]);
     }
@@ -81,6 +81,7 @@ class AdminBookingController extends Controller
         $start = CarbonImmutable::parse($validated['start'])->startOfDay();
         $end = CarbonImmutable::parse($validated['end'])->startOfDay();
 
+        abort_if($start->greaterThan($end), 422, 'A kezdő dátum nem lehet későbbi a záró dátumnál.');
         abort_if($start->diffInDays($end) > 41, 422, 'Legfeljebb 42 nap kérhető le egyszerre.');
 
         return response()->json([
@@ -95,6 +96,38 @@ class AdminBookingController extends Controller
                 ->orderBy('date')
                 ->orderBy('start_time')
                 ->get(),
+        ]);
+    }
+
+    /**
+     * Egyetlen nap teljes admin-naptár adata: foglalások, blokkok és nyitvatartási sávok.
+     */
+    public function day(Request $request, Business $business): JsonResponse
+    {
+        $validated = $request->validate([
+            'date' => ['required', 'date_format:Y-m-d'],
+        ]);
+
+        $day = CarbonImmutable::parse($validated['date'], $business->timezone)->startOfDay();
+        $weekday = (int) $day->dayOfWeek;
+
+        return response()->json([
+            'data' => [
+                'date' => $validated['date'],
+                'bookings' => $business->bookings()
+                    ->with('service')
+                    ->whereDate('date', $validated['date'])
+                    ->orderBy('start_time')
+                    ->get(),
+                'blocks' => $business->blockedTimes()
+                    ->whereDate('date', $validated['date'])
+                    ->orderBy('start_time')
+                    ->get(),
+                'workingHours' => $business->workingHours()
+                    ->where('weekday', $weekday)
+                    ->orderBy('start_time')
+                    ->get(['start_time', 'end_time']),
+            ],
         ]);
     }
 
@@ -158,21 +191,49 @@ class AdminBookingController extends Controller
         });
     }
 
+    /**
+     * Többnapos blokkolás migráció nélkül: a rendszer minden napra külön sort hoz létre.
+     * Ez megtartja a jelenlegi SlotService kompatibilitását is.
+     */
     public function block(Request $request, Business $business): JsonResponse
     {
         $validated = $request->validate([
-            'date' => ['required', 'date_format:Y-m-d'],
+            'start_date' => ['nullable', 'required_without:date', 'date_format:Y-m-d'],
+            'end_date' => ['nullable', 'date_format:Y-m-d'],
+            'date' => ['nullable', 'required_without:start_date', 'date_format:Y-m-d'],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
             'reason' => ['nullable', 'string', 'max:160'],
         ]);
 
-        $block = BlockedTime::create([
-            ...$validated,
-            'business_id' => $business->id,
-        ]);
+        $startDate = $validated['start_date'] ?? $validated['date'];
+        $endDate = $validated['end_date'] ?? $startDate;
+        $start = CarbonImmutable::parse($startDate)->startOfDay();
+        $end = CarbonImmutable::parse($endDate)->startOfDay();
 
-        return response()->json(['data' => $block], 201);
+        abort_if($start->greaterThan($end), 422, 'A záró dátum nem lehet korábbi a kezdő dátumnál.');
+        abort_if($start->diffInDays($end) > 366, 422, 'Egyszerre legfeljebb 367 nap blokkolható.');
+
+        $created = DB::transaction(function () use ($business, $start, $end, $validated) {
+            $items = collect();
+
+            for ($cursor = $start; $cursor->lessThanOrEqualTo($end); $cursor = $cursor->addDay()) {
+                $items->push(BlockedTime::create([
+                    'business_id' => $business->id,
+                    'date' => $cursor->format('Y-m-d'),
+                    'start_time' => $validated['start_time'],
+                    'end_time' => $validated['end_time'],
+                    'reason' => $validated['reason'] ?? null,
+                ]));
+            }
+
+            return $items;
+        });
+
+        return response()->json([
+            'data' => $created,
+            'count' => $created->count(),
+        ], 201);
     }
 
     public function updateStatus(Request $request, Booking $booking): JsonResponse
@@ -213,7 +274,7 @@ class AdminBookingController extends Controller
                 ->whereDate('date', '>=', today()->subDays(7))
                 ->orderBy('date')
                 ->orderBy('start_time')
-                ->limit(150)
+                ->limit(500)
                 ->get(),
         ]);
     }
@@ -222,7 +283,7 @@ class AdminBookingController extends Controller
     {
         $blockedTime->delete();
 
-        return response()->json(['message' => 'Blokk torolve.']);
+        return response()->json(['message' => 'Blokk törölve.']);
     }
 
     private function withDayLock(Business $business, string $date, callable $callback): JsonResponse

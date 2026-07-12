@@ -11,6 +11,7 @@ Route::prefix('v1')->group(function (): void {
     Route::get('/businesses/{business:slug}', [PublicBookingController::class, 'business']);
     Route::get('/businesses/{business:slug}/services', [PublicBookingController::class, 'services']);
     Route::get('/businesses/{business:slug}/slots', [PublicBookingController::class, 'slots']);
+    Route::get('/businesses/{business:slug}/availability', [PublicBookingController::class, 'availability']);
     Route::post('/businesses/{business:slug}/bookings', [PublicBookingController::class, 'store']);
 
    Route::get('/bookings/{booking:manage_token}', [PublicBookingController::class, 'show']);
@@ -30,12 +31,15 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/businesses/{business}/summary', [AdminBookingController::class, 'summary']);
         Route::get('/businesses/{business}/today', [AdminBookingController::class, 'today']);
         Route::get('/businesses/{business}/calendar', [AdminBookingController::class, 'calendar']);
+        Route::get('/businesses/{business}/day', [AdminBookingController::class, 'day']);
         Route::get('/businesses/{business}/slots', [AdminBookingController::class, 'slots']);
         Route::post('/businesses/{business}/bookings', [AdminBookingController::class, 'store']);
         Route::get('/businesses/{business}/services', [AdminServiceController::class, 'index']);
         Route::post('/businesses/{business}/services', [AdminServiceController::class, 'store']);
         Route::patch('/services/{service}', [AdminServiceController::class, 'update']);
         Route::delete('/services/{service}', [AdminServiceController::class, 'destroy']);
+        Route::post('/services/{service}/image', [AdminServiceController::class, 'uploadImage']);
+        Route::delete('/services/{service}/image', [AdminServiceController::class, 'deleteImage']);
         Route::post('/businesses/{business}/services/reorder', [AdminServiceController::class, 'reorder']);
         Route::get('/businesses/{business}/blocked-times', [AdminBookingController::class, 'blockedTimes']);
         Route::post('/businesses/{business}/blocked-times', [AdminBookingController::class, 'block']);

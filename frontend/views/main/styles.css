@@ -142,3 +142,70 @@
 @media (max-width: 760px) {
   .hero-card { grid-template-columns: 1fr; }
 }
+
+/* --- Havi + napi naptáras publikus foglalás --- */
+.business-logo-mark img { object-fit: contain; background:#fff; }
+.public-booking-calendar-stage { min-height:360px; }
+.booking-calendar-view-enter-active,
+.booking-calendar-view-leave-active { transition:opacity .22s ease, transform .26s cubic-bezier(.2,.78,.25,1); }
+.booking-calendar-view-enter-from { opacity:0; transform:translateY(14px) scale(.992); }
+.booking-calendar-view-leave-to { opacity:0; transform:translateY(-10px) scale(.995); }
+
+.public-calendar-toolbar,
+.public-day-toolbar { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; margin-bottom:16px; }
+.public-calendar-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+.public-calendar-actions .button[disabled] { opacity:.4; cursor:not-allowed; }
+.public-month-weekdays { display:grid; grid-template-columns:repeat(7, minmax(0,1fr)); border:1px solid var(--line); border-bottom:0; border-radius:16px 16px 0 0; overflow:hidden; background:var(--paper-sunken); }
+.public-month-weekdays span { padding:9px 4px; text-align:center; color:var(--muted); font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; }
+.public-month-grid { display:grid; grid-template-columns:repeat(7, minmax(0,1fr)); border-top:1px solid var(--line); border-left:1px solid var(--line); border-radius:0 0 16px 16px; overflow:hidden; background:var(--line); }
+.public-month-day { min-height:112px; padding:10px; display:flex; flex-direction:column; align-items:flex-start; gap:5px; border:0; border-right:1px solid var(--line); border-bottom:1px solid var(--line); background:#fffdf9; color:var(--ink); cursor:pointer; text-align:left; transition:background .16s ease, box-shadow .16s ease, transform .14s ease; }
+.public-month-day:hover:not(:disabled) { background:#fff7e9; box-shadow:inset 0 0 0 2px rgba(226,163,59,.36); z-index:1; }
+.public-month-day:active:not(:disabled) { transform:scale(.985); }
+.public-month-day.outside-month { background:#f2ede4; color:#8e877a; }
+.public-month-day.disabled { opacity:.44; cursor:not-allowed; }
+.public-month-day.today { background:linear-gradient(145deg,#fffdf9,#fff3dd); }
+.public-month-day-number { width:29px; height:29px; display:grid; place-items:center; border-radius:50%; font-family:var(--font-mono); font-size:12px; font-weight:700; }
+.public-month-day.today .public-month-day-number { background:var(--ink); color:#fff; }
+.public-month-day small { color:var(--amber-ink); font-size:9px; font-weight:800; text-transform:uppercase; }
+.public-month-day i { margin-top:auto; color:var(--muted); font-style:normal; font-size:9px; opacity:0; transform:translateY(3px); transition:opacity .16s ease, transform .16s ease; }
+.public-month-day:hover i { opacity:1; transform:translateY(0); }
+.public-calendar-hint { margin-top:12px; color:var(--muted); font-size:12.5px; }
+
+.public-back-link { margin:0 0 8px; padding:0; border:0; background:transparent; color:var(--ink-soft); font:inherit; font-size:12.5px; font-weight:700; cursor:pointer; }
+.public-back-link:hover { color:var(--ink); text-decoration:underline; }
+.public-selected-service { max-width:320px; padding:10px 13px; border:1px solid var(--line); border-radius:999px; background:#fffaf3; color:var(--ink-soft); font-size:12px; font-weight:700; }
+.public-calendar-loading { min-height:220px; display:grid; place-items:center; align-content:center; gap:10px; color:var(--muted); }
+.public-day-timeline { border:1px solid var(--line); border-radius:16px; overflow:hidden; background:#fffdf9; }
+.public-hour-row { display:grid; grid-template-columns:78px 1fr; min-height:68px; border-top:1px solid var(--line); }
+.public-hour-row:first-child { border-top:0; }
+.public-hour-label { padding:9px 10px 0 0; text-align:right; color:var(--muted); font-family:var(--font-mono); font-size:11px; background:#f8f3ea; }
+.public-quarter-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); }
+.public-quarter-slot { min-width:0; min-height:68px; border:0; border-left:1px dashed rgba(205,192,163,.7); background:#efede7; color:#a49d91; cursor:not-allowed; transition:background .15s ease, transform .13s ease, box-shadow .15s ease; }
+.public-quarter-slot:first-child { border-left:1px solid var(--line); }
+.public-quarter-slot.available { background:linear-gradient(145deg,#fffdf9,#fff4df); color:var(--ink); cursor:pointer; }
+.public-quarter-slot.available:hover { background:#f8dfb4; box-shadow:inset 0 0 0 1px var(--amber); z-index:1; }
+.public-quarter-slot.selected { background:var(--ink); color:#fff; box-shadow:inset 0 0 0 2px var(--amber); transform:scale(.985); }
+.public-quarter-slot strong,
+.public-quarter-slot small { display:block; }
+.public-quarter-slot strong { font-family:var(--font-mono); font-size:12px; }
+.public-quarter-slot small { margin-top:2px; font-size:9.5px; opacity:.72; }
+.public-day-empty { margin-top:12px; }
+
+@media (max-width:760px) {
+  .public-calendar-toolbar,
+  .public-day-toolbar { flex-direction:column; }
+  .public-calendar-actions { justify-content:flex-start; }
+  .public-month-day { min-height:78px; padding:6px; }
+  .public-month-day i { display:none; }
+  .public-month-day-number { width:24px; height:24px; font-size:10px; }
+  .public-selected-service { max-width:100%; }
+  .public-hour-row { grid-template-columns:58px 1fr; }
+  .public-quarter-slot { min-height:62px; }
+  .public-quarter-slot small { display:none; }
+}
+
+@media (max-width:520px) {
+  .public-month-weekdays span { font-size:8px; padding:7px 1px; }
+  .public-month-day { min-height:62px; }
+  .public-quarter-slot strong { font-size:10px; }
+}

@@ -1,5 +1,5 @@
 const { createApp, reactive } = Vue;
-const { api, todayKey, parseKey, useToasts, formatPrice } = window.App;
+const { api, todayKey, addDaysKey, parseKey, formatDateLong, useToasts, formatPrice } = window.App;
 
 const STATUS_LABELS = {
   booked: 'Foglalva',
@@ -7,6 +7,8 @@ const STATUS_LABELS = {
   cancelled: 'Lemondva',
   no_show: 'Nem jelent meg'
 };
+
+const HOUR_HEIGHT = 64;
 
 createApp({
   data() {
@@ -21,6 +23,7 @@ createApp({
       savingService: false,
       savingWebsite: false,
       uploadingLogo: false,
+      uploadingServiceImage: false,
       savingReview: false,
       savingFaq: false,
       stats: {},
@@ -32,23 +35,71 @@ createApp({
       services: [],
       reviews: [],
       faqs: [],
-      slots: [],
       activeTab: 'calendar',
       calendarDate: todayKey(),
+      calendarMode: 'month',
+      selectedDayDate: todayKey(),
+      dayBookings: [],
+      dayBlocks: [],
+      dayWorkingHours: [],
+      dayAvailableSlots: [],
+      dayLoading: false,
+      timelineServiceId: '',
       weekdayLabels: ['H', 'K', 'Sze', 'Cs', 'P', 'Szo', 'V'],
+      bookingSearch: '',
+      selectedBooking: null,
+      bookingModalOpen: false,
+      manualModalOpen: false,
       serviceModalOpen: false,
       reviewModalOpen: false,
       faqModalOpen: false,
       websitePreviewVersion: 0,
-      filters: { status: '', date: '', q: '' },
-      block: { date: todayKey(), start_time: '12:00', end_time: '13:00', reason: '' },
-      manual: { service_id: '', date: todayKey(), time: '', customer_name: '', customer_contact: '', customer_note: '' },
-      serviceForm: { id: null, category: 'Altalanos', name: '', description: '', image_url: '', duration_minutes: 45, buffer_minutes: 10, price_forint: '', active: true, sort_order: 0 },
-      websiteForm: { name: '', tagline: '', hero_title: '', hero_text: '', about_title: '', about_text: '', phone: '', email: '', address: '', opening_hours: '', google_maps_url: '' },
+      block: {
+        start_date: todayKey(),
+        end_date: todayKey(),
+        start_time: '12:00',
+        end_time: '13:00',
+        reason: ''
+      },
+      manual: {
+        service_id: '',
+        date: todayKey(),
+        time: '',
+        customer_name: '',
+        customer_contact: '',
+        customer_note: ''
+      },
+      manualSlots: [],
+      serviceForm: {
+        id: null,
+        category: 'Altalanos',
+        name: '',
+        description: '',
+        image_url: '',
+        duration_minutes: 45,
+        buffer_minutes: 10,
+        price_forint: '',
+        active: true,
+        sort_order: 0
+      },
+      serviceImageFile: null,
+      serviceImagePreview: '',
+      websiteForm: {
+        name: '',
+        tagline: '',
+        hero_title: '',
+        hero_text: '',
+        about_title: '',
+        about_text: '',
+        phone: '',
+        email: '',
+        address: '',
+        opening_hours: '',
+        google_maps_url: ''
+      },
       reviewForm: { id: null, author: '', text: '', rating: 5, active: true, sort_order: 0 },
       faqForm: { id: null, question: '', answer: '', active: true, sort_order: 0 },
-      toasts: useToasts(reactive),
-      debounceHandle: null
+      toasts: useToasts(reactive)
     };
   },
 
@@ -56,6 +107,10 @@ createApp({
     currentMonthLabel() {
       const value = new Intl.DateTimeFormat('hu-HU', { year: 'numeric', month: 'long' }).format(parseKey(this.calendarDate));
       return value.charAt(0).toLocaleUpperCase('hu-HU') + value.slice(1);
+    },
+
+    selectedDayLabel() {
+      return formatDateLong(this.selectedDayDate);
     },
 
     monthCalendarDays() {
@@ -89,8 +144,80 @@ createApp({
       };
     },
 
-    currentService() {
-      return this.services.find((service) => String(service.id) === String(this.manual.service_id));
+    dayTimelineHours() {
+      const points = [];
+      for (const range of this.dayWorkingHours) {
+        points.push(this.timeToMinutes(range.start_time), this.timeToMinutes(range.end_time));
+      }
+      for (const item of [...this.dayBookings, ...this.dayBlocks]) {
+        points.push(this.timeToMinutes(item.start_time), this.timeToMinutes(item.end_time));
+      }
+
+      const valid = points.filter(Number.isFinite);
+      const minHour = valid.length ? Math.max(0, Math.floor(Math.min(...valid) / 60) - 1) : 7;
+      const maxHour = valid.length ? Math.min(24, Math.ceil(Math.max(...valid) / 60) + 1) : 19;
+      const endHour = Math.min(24, Math.max(minHour + 4, maxHour));
+
+      return Array.from({ length: endHour - minHour }, (_, index) => minHour + index);
+    },
+
+    dayTimelineStartMinutes() {
+      return (this.dayTimelineHours[0] || 0) * 60;
+    },
+
+    dayTimelineHeight() {
+      return this.dayTimelineHours.length * HOUR_HEIGHT;
+    },
+
+    dayAvailableSlotSet() {
+      return new Set(this.dayAvailableSlots.map((slot) => slot.time));
+    },
+
+    currentTimelineService() {
+      return this.services.find((service) => String(service.id) === String(this.timelineServiceId));
+    },
+
+    bookingSearchResults() {
+      const query = this.bookingSearch.trim().toLocaleLowerCase('hu-HU');
+      if (query.length < 2) return [];
+
+      return this.bookings
+        .filter((item) => [item.customer_name, item.customer_contact, item.customer_note, item.service_name]
+          .some((value) => String(value || '').toLocaleLowerCase('hu-HU').includes(query)))
+        .slice(0, 8);
+    },
+
+    blockGroups() {
+      const sorted = [...this.blockedTimes].sort((a, b) => {
+        const dateCompare = String(a.date).localeCompare(String(b.date));
+        return dateCompare || String(a.start_time).localeCompare(String(b.start_time));
+      });
+      const groups = [];
+
+      for (const item of sorted) {
+        const signature = `${this.shortTime(item.start_time)}|${this.shortTime(item.end_time)}|${item.reason || ''}|${item.created_at || ''}`;
+        const previous = groups[groups.length - 1];
+        const canExtend = previous
+          && previous.signature === signature
+          && item.date === addDaysKey(previous.end_date, 1);
+
+        if (canExtend) {
+          previous.end_date = item.date;
+          previous.items.push(item);
+        } else {
+          groups.push({
+            signature,
+            start_date: item.date,
+            end_date: item.date,
+            start_time: item.start_time,
+            end_time: item.end_time,
+            reason: item.reason,
+            items: [item]
+          });
+        }
+      }
+
+      return groups;
     }
   },
 
@@ -109,21 +236,38 @@ createApp({
   beforeUnmount() {
     window.removeEventListener('keydown', this.handleKeydown);
     document.body.classList.remove('modal-open');
+    this.revokeServicePreview();
   },
 
   methods: {
     statusLabel(status) { return STATUS_LABELS[status] || status; },
     price(service) { return formatPrice(service.price_cents); },
     shortTime(value) { return String(value || '').slice(0, 5); },
+    formatDateLong,
+
     monogram(name) {
       return String(name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toLocaleUpperCase('hu-HU') || '').join('');
     },
+
     dateKey(date) {
       const pad = (value) => String(value).padStart(2, '0');
       return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
     },
+
+    timeToMinutes(value) {
+      const [hour, minute] = String(value || '').slice(0, 5).split(':').map(Number);
+      return Number.isFinite(hour) && Number.isFinite(minute) ? hour * 60 + minute : NaN;
+    },
+
+    minutesToTime(total) {
+      const hour = Math.floor(total / 60);
+      const minute = total % 60;
+      return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+    },
+
     itemsForDay(day) { return this.calendarItems.filter((item) => item.date === day); },
     blocksForDay(day) { return this.calendarBlocks.filter((item) => item.date === day); },
+
     calendarEntriesForDay(day) {
       const entries = [
         ...this.blocksForDay(day).map((item) => ({ type: 'block', key: `block-${item.id}`, start: item.start_time, item })),
@@ -131,12 +275,17 @@ createApp({
       ];
       return entries.sort((left, right) => String(left.start || '').localeCompare(String(right.start || '')));
     },
+
     syncModalBodyLock() {
-      document.body.classList.toggle('modal-open', this.serviceModalOpen || this.reviewModalOpen || this.faqModalOpen);
+      const open = this.bookingModalOpen || this.manualModalOpen || this.serviceModalOpen || this.reviewModalOpen || this.faqModalOpen;
+      document.body.classList.toggle('modal-open', open);
     },
+
     handleKeydown(event) {
       if (event.key !== 'Escape') return;
-      if (this.serviceModalOpen) this.closeServiceModal();
+      if (this.bookingModalOpen) this.closeBookingModal();
+      else if (this.manualModalOpen) this.closeManualModal();
+      else if (this.serviceModalOpen) this.closeServiceModal();
       else if (this.reviewModalOpen) this.closeReviewModal();
       else if (this.faqModalOpen) this.closeFaqModal();
     },
@@ -165,6 +314,8 @@ createApp({
       this.services = [];
       this.reviews = [];
       this.faqs = [];
+      this.bookingModalOpen = false;
+      this.manualModalOpen = false;
       this.serviceModalOpen = false;
       this.reviewModalOpen = false;
       this.faqModalOpen = false;
@@ -175,16 +326,10 @@ createApp({
       if (!this.token) return;
       this.loading = true;
       try {
-        const params = new URLSearchParams();
-        if (this.filters.status) params.set('status', this.filters.status);
-        if (this.filters.date) params.set('date', this.filters.date);
-        if (this.filters.q) params.set('q', this.filters.q);
-
         const { start, end } = this.calendarRange;
-
         const [summary, bookings, blocks, services, today, calendar] = await Promise.all([
           api(`/admin/businesses/${window.App.config.businessId}/summary`, { token: this.token }),
-          api(`/admin/businesses/${window.App.config.businessId}/bookings?${params}`, { token: this.token }),
+          api(`/admin/businesses/${window.App.config.businessId}/bookings`, { token: this.token }),
           api(`/admin/businesses/${window.App.config.businessId}/blocked-times`, { token: this.token }),
           api(`/admin/businesses/${window.App.config.businessId}/services`, { token: this.token }),
           api(`/admin/businesses/${window.App.config.businessId}/today`, { token: this.token }),
@@ -198,24 +343,251 @@ createApp({
         this.todayBookings = today.data || [];
         this.calendarItems = calendar.data || [];
         this.calendarBlocks = calendar.blocks || [];
-        if (!this.manual.service_id && this.services.length) this.manual.service_id = this.services.find((s) => s.active)?.id || this.services[0].id;
-        await this.loadSlots();
+
+        const firstActiveService = this.services.find((service) => service.active) || this.services[0];
+        if (!this.services.some((service) => service.active && String(service.id) === String(this.timelineServiceId))) {
+          this.timelineServiceId = firstActiveService?.id || '';
+        }
+        if (!this.services.some((service) => service.active && String(service.id) === String(this.manual.service_id))) {
+          this.manual.service_id = firstActiveService?.id || '';
+        }
+
+        if (this.calendarMode === 'day') {
+          await this.loadDay(this.selectedDayDate, false);
+        }
       } catch (error) {
-        if (String(error.message).includes('401')) { this.toasts.error('A munkameneted lejárt, jelentkezz be újra.'); this.logout(); }
-        else this.toasts.error(`Nem sikerült frissíteni: ${error.message}`);
+        if (String(error.message).includes('401')) {
+          this.toasts.error('A munkameneted lejárt, jelentkezz be újra.');
+          this.logout();
+        } else {
+          this.toasts.error(`Nem sikerült frissíteni: ${error.message}`);
+        }
       } finally {
         this.loading = false;
       }
     },
 
-    async loadSlots() {
-      this.slots = [];
+    moveCalendar(amount) {
+      const focus = parseKey(this.calendarDate);
+      const next = new Date(focus.getFullYear(), focus.getMonth() + amount, 1);
+      this.calendarDate = this.dateKey(next);
+      this.calendarMode = 'month';
+      this.refresh();
+    },
+
+    goToday() {
+      this.calendarDate = todayKey();
+      this.calendarMode = 'month';
+      this.refresh();
+    },
+
+    async openDay(dayKey) {
+      this.selectedDayDate = dayKey;
+      this.calendarMode = 'day';
+      this.bookingSearch = '';
+      await this.loadDay(dayKey, true);
+    },
+
+    backToMonth() {
+      this.calendarMode = 'month';
+    },
+
+    async loadDay(dayKey = this.selectedDayDate, scrollToWorkday = false) {
+      if (!this.token) return;
+      this.dayLoading = true;
+      this.selectedDayDate = dayKey;
+      try {
+        const response = await api(`/admin/businesses/${window.App.config.businessId}/day?date=${encodeURIComponent(dayKey)}`, { token: this.token });
+        const data = response.data || {};
+        this.dayBookings = data.bookings || [];
+        this.dayBlocks = data.blocks || [];
+        this.dayWorkingHours = data.workingHours || [];
+        await this.loadDayAvailability();
+
+        if (scrollToWorkday) {
+          this.$nextTick(() => {
+            const scroller = this.$refs.dayTimelineScroller;
+            if (!scroller) return;
+            const firstWorking = this.dayWorkingHours[0]?.start_time;
+            const targetMinutes = firstWorking ? Math.max(0, this.timeToMinutes(firstWorking) - 60) : this.dayTimelineStartMinutes;
+            scroller.scrollTop = Math.max(0, ((targetMinutes - this.dayTimelineStartMinutes) / 60) * HOUR_HEIGHT);
+          });
+        }
+      } catch (error) {
+        this.toasts.error(`A napi naptár nem tölthető be: ${error.message}`);
+      } finally {
+        this.dayLoading = false;
+      }
+    },
+
+    async loadDayAvailability() {
+      this.dayAvailableSlots = [];
+      if (!this.token || !this.timelineServiceId || !this.selectedDayDate) return;
+      try {
+        const params = new URLSearchParams({ service_id: this.timelineServiceId, date: this.selectedDayDate });
+        const response = await api(`/admin/businesses/${window.App.config.businessId}/slots?${params}`, { token: this.token });
+        this.dayAvailableSlots = response.data || [];
+      } catch (error) {
+        this.toasts.error(`A szabad időpontok nem tölthetők be: ${error.message}`);
+      }
+    },
+
+    quarterCellsForHour(hour) {
+      return [0, 15, 30, 45].map((minute) => {
+        const time = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+        return {
+          time,
+          available: this.dayAvailableSlotSet.has(time),
+          working: this.isWithinWorkingHours(time)
+        };
+      });
+    },
+
+    isWithinWorkingHours(time) {
+      const minute = this.timeToMinutes(time);
+      return this.dayWorkingHours.some((range) => {
+        const start = this.timeToMinutes(range.start_time);
+        const end = this.timeToMinutes(range.end_time);
+        return minute >= start && minute < end;
+      });
+    },
+
+    timelineEventStyle(item) {
+      const start = this.timeToMinutes(item.start_time);
+      const end = this.timeToMinutes(item.end_time);
+      const top = ((start - this.dayTimelineStartMinutes) / 60) * HOUR_HEIGHT;
+      const height = Math.max(28, ((end - start) / 60) * HOUR_HEIGHT);
+      return { top: `${top}px`, height: `${height}px` };
+    },
+
+    openBookingModal(booking) {
+      this.selectedBooking = booking;
+      this.bookingModalOpen = true;
+      this.syncModalBodyLock();
+    },
+
+    closeBookingModal() {
+      this.bookingModalOpen = false;
+      this.selectedBooking = null;
+      this.syncModalBodyLock();
+    },
+
+    async openBookingFromSearch(booking) {
+      this.selectedDayDate = booking.date;
+      this.calendarDate = booking.date;
+      this.calendarMode = 'day';
+      this.bookingSearch = '';
+      await this.refresh();
+      const fresh = this.dayBookings.find((item) => item.id === booking.id) || booking;
+      this.openBookingModal(fresh);
+      this.$nextTick(() => {
+        const scroller = this.$refs.dayTimelineScroller;
+        if (!scroller) return;
+        const targetMinutes = Math.max(this.dayTimelineStartMinutes, this.timeToMinutes(fresh.start_time) - 60);
+        scroller.scrollTop = Math.max(0, ((targetMinutes - this.dayTimelineStartMinutes) / 60) * HOUR_HEIGHT);
+      });
+    },
+
+    async setStatus(booking, status) {
+      try {
+        const response = await api(`/admin/bookings/${booking.id}/status`, {
+          method: 'PATCH',
+          token: this.token,
+          body: JSON.stringify({ status })
+        });
+        const updated = response.data || { ...booking, status };
+        if (this.selectedBooking?.id === updated.id) this.selectedBooking = updated;
+        this.toasts.success('Foglalás frissítve.');
+        await this.refresh();
+      } catch (error) {
+        this.toasts.error(`Nem sikerült frissíteni: ${error.message}`);
+      }
+    },
+
+    manageLinkFor(booking) {
+      if (!booking?.manage_token) return '';
+      const path = window.location.pathname.replace(/\/(admin(?:\.html|\.php)?)(?:\/.*)?$/i, '');
+      return `${window.location.origin}${path}/manage?token=${encodeURIComponent(booking.manage_token)}`;
+    },
+
+    async copyManageLink(booking) {
+      const link = this.manageLinkFor(booking);
+      if (!link) return;
+      try {
+        await navigator.clipboard.writeText(link);
+        this.toasts.success('Kezelő link a vágólapra másolva.');
+      } catch {
+        this.toasts.error('A link másolása nem sikerült.');
+      }
+    },
+
+    syncBlockDates() {
+      if (this.block.end_date < this.block.start_date) this.block.end_date = this.block.start_date;
+    },
+
+    async saveBlock() {
+      this.blockingTime = true;
+      try {
+        const response = await api(`/admin/businesses/${window.App.config.businessId}/blocked-times`, {
+          method: 'POST',
+          token: this.token,
+          body: JSON.stringify(this.block)
+        });
+        const count = Number(response.count || 1);
+        this.toasts.success(count > 1 ? `${count} nap blokkolva.` : 'Időszak blokkolva.');
+        this.block.reason = '';
+        await this.refresh();
+      } catch (error) {
+        this.toasts.error(`Nem sikerült menteni: ${error.message}`);
+      } finally {
+        this.blockingTime = false;
+      }
+    },
+
+    async deleteBlockGroup(group) {
+      const dateLabel = group.start_date === group.end_date ? group.start_date : `${group.start_date} – ${group.end_date}`;
+      if (!confirm(`Biztosan törlöd ezt a blokkolást (${dateLabel})?`)) return;
+      try {
+        await Promise.all(group.items.map((item) => api(`/admin/blocked-times/${item.id}`, { method: 'DELETE', token: this.token })));
+        this.toasts.success('Blokkolás törölve.');
+        await this.refresh();
+      } catch (error) {
+        this.toasts.error(`Nem sikerült törölni: ${error.message}`);
+      }
+    },
+
+    async openManualModal(time = '') {
+      const firstActiveService = this.services.find((service) => service.active);
+      this.manual = {
+        service_id: this.timelineServiceId || firstActiveService?.id || '',
+        date: this.selectedDayDate,
+        time,
+        customer_name: '',
+        customer_contact: '',
+        customer_note: ''
+      };
+      this.manualModalOpen = true;
+      this.syncModalBodyLock();
+      await this.loadManualSlots(time);
+      this.$nextTick(() => this.$refs.manualNameInput?.focus());
+    },
+
+    closeManualModal() {
+      if (this.savingManual) return;
+      this.manualModalOpen = false;
+      this.syncModalBodyLock();
+    },
+
+    async loadManualSlots(preferredTime = '') {
+      this.manualSlots = [];
       if (!this.token || !this.manual.service_id || !this.manual.date) return;
       try {
         const params = new URLSearchParams({ service_id: this.manual.service_id, date: this.manual.date });
         const response = await api(`/admin/businesses/${window.App.config.businessId}/slots?${params}`, { token: this.token });
-        this.slots = response.data || [];
-        if (!this.slots.some((slot) => slot.time === this.manual.time)) this.manual.time = this.slots[0]?.time || '';
+        this.manualSlots = response.data || [];
+        const desired = preferredTime || this.manual.time;
+        if (this.manualSlots.some((slot) => slot.time === desired)) this.manual.time = desired;
+        else this.manual.time = this.manualSlots[0]?.time || '';
       } catch (error) {
         this.toasts.error(`Időpontok betöltése sikertelen: ${error.message}`);
       }
@@ -225,54 +597,19 @@ createApp({
       this.savingManual = true;
       try {
         await api(`/admin/businesses/${window.App.config.businessId}/bookings`, {
-          method: 'POST', token: this.token, body: JSON.stringify(this.manual)
+          method: 'POST',
+          token: this.token,
+          body: JSON.stringify(this.manual)
         });
         this.toasts.success('Kézi foglalás rögzítve.');
-        this.manual.customer_name = ''; this.manual.customer_contact = ''; this.manual.customer_note = '';
+        this.manualModalOpen = false;
+        this.syncModalBodyLock();
         await this.refresh();
       } catch (error) {
         this.toasts.error(`Nem sikerült kézzel foglalni: ${error.message}`);
       } finally {
         this.savingManual = false;
       }
-    },
-
-    debouncedRefresh() { clearTimeout(this.debounceHandle); this.debounceHandle = setTimeout(() => this.refresh(), 350); },
-    clearFilters() { this.filters = { status: '', date: '', q: '' }; this.refresh(); },
-    moveCalendar(amount) {
-      const focus = parseKey(this.calendarDate);
-      const next = new Date(focus.getFullYear(), focus.getMonth() + amount, 1);
-      this.calendarDate = this.dateKey(next);
-      this.refresh();
-    },
-    goToday() { this.calendarDate = todayKey(); this.refresh(); },
-
-    async setStatus(booking, status) {
-      try {
-        await api(`/admin/bookings/${booking.id}/status`, { method: 'PATCH', token: this.token, body: JSON.stringify({ status }) });
-        this.toasts.success('Foglalás frissítve.');
-        await this.refresh();
-      } catch (error) { this.toasts.error(`Nem sikerült frissíteni: ${error.message}`); }
-    },
-
-    async saveBlock() {
-      this.blockingTime = true;
-      try {
-        await api(`/admin/businesses/${window.App.config.businessId}/blocked-times`, { method: 'POST', token: this.token, body: JSON.stringify(this.block) });
-        this.toasts.success('Időszak blokkolva.');
-        this.block.reason = '';
-        await this.refresh();
-      } catch (error) { this.toasts.error(`Nem sikerült menteni: ${error.message}`); }
-      finally { this.blockingTime = false; }
-    },
-
-    async deleteBlock(item) {
-      if (!confirm('Biztosan törlöd ezt a blokkolt időszakot?')) return;
-      try {
-        await api(`/admin/blocked-times/${item.id}`, { method: 'DELETE', token: this.token });
-        this.toasts.success('Blokk törölve.');
-        await this.refresh();
-      } catch (error) { this.toasts.error(`Nem sikerült törölni: ${error.message}`); }
     },
 
     async openWebsiteTab() {
@@ -337,11 +674,10 @@ createApp({
         const formData = new FormData();
         formData.append('logo', file);
         const response = await api(`/admin/businesses/${window.App.config.businessId}/logo`, {
-          method: 'POST',
-          token: this.token,
-          body: formData
+          method: 'POST', token: this.token, body: formData
         });
         this.business = response.data || this.business;
+        this.websitePreviewVersion += 1;
         this.toasts.success('Logó feltöltve.');
       } catch (error) {
         this.toasts.error(`Logó feltöltése sikertelen: ${error.message}`);
@@ -356,6 +692,7 @@ createApp({
       try {
         const response = await api(`/admin/businesses/${window.App.config.businessId}/logo`, { method: 'DELETE', token: this.token });
         this.business = response.data || this.business;
+        this.websitePreviewVersion += 1;
         this.toasts.success('Logó törölve, a monogram aktív.');
       } catch (error) {
         this.toasts.error(`Logó törlése sikertelen: ${error.message}`);
@@ -486,6 +823,8 @@ createApp({
     },
 
     openServiceModal(service = null) {
+      this.revokeServicePreview();
+      this.serviceImageFile = null;
       if (service) {
         this.serviceForm = {
           id: service.id,
@@ -499,6 +838,7 @@ createApp({
           active: !!service.active,
           sort_order: service.sort_order || 0
         };
+        this.serviceImagePreview = service.image_url || '';
       } else {
         this.resetServiceForm();
       }
@@ -510,13 +850,40 @@ createApp({
     editService(service) { this.openServiceModal(service); },
 
     closeServiceModal() {
-      if (this.savingService) return;
+      if (this.savingService || this.uploadingServiceImage) return;
       this.serviceModalOpen = false;
+      this.revokeServicePreview();
       this.syncModalBodyLock();
     },
 
     resetServiceForm() {
-      this.serviceForm = { id: null, category: 'Altalanos', name: '', description: '', image_url: '', duration_minutes: 45, buffer_minutes: 10, price_forint: '', active: true, sort_order: this.services.length + 1 };
+      this.revokeServicePreview();
+      this.serviceForm = {
+        id: null,
+        category: 'Altalanos',
+        name: '',
+        description: '',
+        image_url: '',
+        duration_minutes: 45,
+        buffer_minutes: 10,
+        price_forint: '',
+        active: true,
+        sort_order: this.services.length + 1
+      };
+      this.serviceImageFile = null;
+      this.serviceImagePreview = '';
+    },
+
+    onServiceImageSelected(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      this.revokeServicePreview();
+      this.serviceImageFile = file;
+      this.serviceImagePreview = URL.createObjectURL(file);
+    },
+
+    revokeServicePreview() {
+      if (this.serviceImagePreview?.startsWith('blob:')) URL.revokeObjectURL(this.serviceImagePreview);
     },
 
     servicePayload() {
@@ -533,25 +900,78 @@ createApp({
       };
     },
 
+    async uploadServiceImage(serviceId, file) {
+      const formData = new FormData();
+      formData.append('image', file);
+      const response = await api(`/admin/services/${serviceId}/image`, {
+        method: 'POST', token: this.token, body: formData
+      });
+      return response.data;
+    },
+
+    async deleteServiceImage() {
+      if (this.serviceImageFile) {
+        this.revokeServicePreview();
+        this.serviceImageFile = null;
+        this.serviceImagePreview = this.serviceForm.image_url || '';
+        return;
+      }
+      if (!this.serviceForm.id || !this.serviceForm.image_url) return;
+      if (!confirm('Biztosan törlöd a szolgáltatás képét?')) return;
+
+      this.uploadingServiceImage = true;
+      try {
+        const response = await api(`/admin/services/${this.serviceForm.id}/image`, { method: 'DELETE', token: this.token });
+        this.serviceForm.image_url = response.data?.image_url || '';
+        this.serviceImagePreview = '';
+        this.toasts.success('Szolgáltatáskép törölve.');
+        await this.refresh();
+      } catch (error) {
+        this.toasts.error(`A kép törlése sikertelen: ${error.message}`);
+      } finally {
+        this.uploadingServiceImage = false;
+      }
+    },
+
     async saveService() {
       this.savingService = true;
       try {
         const path = this.serviceForm.id ? `/admin/services/${this.serviceForm.id}` : `/admin/businesses/${window.App.config.businessId}/services`;
-        await api(path, { method: this.serviceForm.id ? 'PATCH' : 'POST', token: this.token, body: JSON.stringify(this.servicePayload()) });
+        const response = await api(path, {
+          method: this.serviceForm.id ? 'PATCH' : 'POST',
+          token: this.token,
+          body: JSON.stringify(this.servicePayload())
+        });
+        let savedService = response.data;
+
+        if (this.serviceImageFile && savedService?.id) {
+          this.uploadingServiceImage = true;
+          savedService = await this.uploadServiceImage(savedService.id, this.serviceImageFile);
+        }
+
         this.toasts.success(this.serviceForm.id ? 'Szolgáltatás módosítva.' : 'Új szolgáltatás felvéve.');
         this.serviceModalOpen = false;
+        this.revokeServicePreview();
         this.syncModalBodyLock();
         this.resetServiceForm();
         await this.refresh();
-      } catch (error) { this.toasts.error(`Szolgáltatás mentése sikertelen: ${error.message}`); }
-      finally { this.savingService = false; }
+      } catch (error) {
+        this.toasts.error(`Szolgáltatás mentése sikertelen: ${error.message}`);
+      } finally {
+        this.savingService = false;
+        this.uploadingServiceImage = false;
+      }
     },
 
     async toggleService(service) {
       try {
-        await api(`/admin/services/${service.id}`, { method: 'PATCH', token: this.token, body: JSON.stringify({ active: !service.active }) });
+        await api(`/admin/services/${service.id}`, {
+          method: 'PATCH', token: this.token, body: JSON.stringify({ active: !service.active })
+        });
         await this.refresh();
-      } catch (error) { this.toasts.error(`Nem sikerült módosítani: ${error.message}`); }
+      } catch (error) {
+        this.toasts.error(`Nem sikerült módosítani: ${error.message}`);
+      }
     },
 
     async moveService(service, direction) {
@@ -562,9 +982,13 @@ createApp({
       [sorted[index], sorted[nextIndex]] = [sorted[nextIndex], sorted[index]];
       const items = sorted.map((item, idx) => ({ id: item.id, sort_order: idx + 1 }));
       try {
-        const response = await api(`/admin/businesses/${window.App.config.businessId}/services/reorder`, { method: 'POST', token: this.token, body: JSON.stringify({ items }) });
+        const response = await api(`/admin/businesses/${window.App.config.businessId}/services/reorder`, {
+          method: 'POST', token: this.token, body: JSON.stringify({ items })
+        });
         this.services = response.data || [];
-      } catch (error) { this.toasts.error(`Sorrend mentése sikertelen: ${error.message}`); }
+      } catch (error) {
+        this.toasts.error(`Sorrend mentése sikertelen: ${error.message}`);
+      }
     }
   }
 }).mount('#adminApp');

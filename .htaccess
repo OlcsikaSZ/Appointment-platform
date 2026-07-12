@@ -10,6 +10,11 @@ DirectoryIndex frontend/index.php
 
     RewriteRule ^api/?(.*)$ backend/public/index.php/api/$1 [END,QSA]
 
+    # Régi, fizikailag a projekt /uploads mappájában lévő fájlok továbbra is kiszolgálhatók.
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^uploads/ - [END]
+
+    # Az új logók és szolgáltatásképek a Laravel publikus storage könyvtárából jönnek.
     RewriteRule ^uploads/(.*)$ backend/storage/app/public/$1 [END]
 
     RewriteRule ^assets/(.*)$ frontend/assets/$1 [END]
