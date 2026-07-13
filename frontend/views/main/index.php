@@ -245,9 +245,18 @@
           <h2 style="margin-top:6px;">Add meg az adataidat</h2>
           <p class="lead">Ezekre az elérhetőségekre küldjük a visszaigazolást, illetve ezen tudunk elérni, ha bármi változna.</p>
           <form class="booking-form" @submit.prevent="saveBooking">
-            <label class="full">Teljes név<input v-model.trim="form.customer_name" required placeholder="Kovács Anna" /></label>
-            <label class="full">Telefonszám vagy e-mail<input v-model.trim="form.customer_contact" required placeholder="+36 30 123 4567" /></label>
-            <label class="full">Megjegyzés (nem kötelező)<textarea v-model.trim="form.customer_note" placeholder="Bármi, amit érdemes tudnunk a foglalás előtt."></textarea></label>
+            <label class="full">Teljes név
+              <input v-model.trim="form.customer_name" type="text" required minlength="2" maxlength="120" autocomplete="name" placeholder="Kovács Anna" />
+              <small v-if="nameError" class="field-error">{{ nameError }}</small>
+            </label>
+            <label class="full">E-mail cím
+              <input v-model.trim="form.customer_contact" type="email" required maxlength="160" autocomplete="email" placeholder="anna@example.com" />
+              <small v-if="emailError" class="field-error">{{ emailError }}</small>
+            </label>
+            <label class="full">Megjegyzés (nem kötelező)
+              <textarea v-model.trim="form.customer_note" minlength="3" maxlength="800" placeholder="Bármi, amit érdemes tudnunk a foglalás előtt."></textarea>
+              <small v-if="noteError" class="field-error">{{ noteError }}</small>
+            </label>
           </form>
 
           <div class="button-row">

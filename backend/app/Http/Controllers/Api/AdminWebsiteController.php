@@ -37,7 +37,7 @@ class AdminWebsiteController extends Controller
             'about_title' => ['nullable', 'string', 'max:160'],
             'about_text' => ['nullable', 'string', 'max:4000'],
             'phone' => ['nullable', 'string', 'max:80'],
-            'email' => ['nullable', 'email', 'max:160'],
+            'email' => ['nullable', 'email:rfc', 'max:160'],
             'address' => ['nullable', 'string', 'max:255'],
             'opening_hours' => ['nullable', 'string', 'max:2000'],
             'google_maps_url' => ['nullable', 'url', 'max:2000'],

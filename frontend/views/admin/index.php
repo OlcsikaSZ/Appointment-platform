@@ -88,7 +88,7 @@
 
             <div class="calendar-toolbar-right">
               <div class="booking-search-wrap">
-                <input v-model.trim="bookingSearch" class="booking-search" type="search" placeholder="Keresés név / telefon / e-mail / megjegyzés" />
+                <input v-model.trim="bookingSearch" class="booking-search" type="search" placeholder="Keresés név / e-mail / megjegyzés" />
                 <div v-if="bookingSearchResults.length" class="booking-search-results">
                   <button v-for="item in bookingSearchResults" :key="item.id" type="button" @click="openBookingFromSearch(item)">
                     <strong>{{ item.customer_name }}</strong>
@@ -389,7 +389,7 @@
           <dl class="booking-detail-grid">
             <div><dt>Szolgáltatás</dt><dd>{{ selectedBooking.service_name }}</dd></div>
             <div><dt>Vendég</dt><dd>{{ selectedBooking.customer_name }}</dd></div>
-            <div><dt>Elérhetőség</dt><dd>{{ selectedBooking.customer_contact }}</dd></div>
+            <div><dt>E-mail</dt><dd>{{ selectedBooking.customer_contact }}</dd></div>
             <div><dt>Foglalt idő</dt><dd>{{ shortTime(selectedBooking.start_time) }}–{{ shortTime(selectedBooking.end_time) }}</dd></div>
             <div class="full"><dt>Megjegyzés</dt><dd>{{ selectedBooking.customer_note || 'Nincs megjegyzés.' }}</dd></div>
           </dl>
@@ -430,10 +430,19 @@
                 </select>
               </label>
             </div>
-            <label>Vendég neve <input ref="manualNameInput" v-model.trim="manual.customer_name" required placeholder="pl. Kovács Anna" /></label>
-            <label>Telefon / e-mail <input v-model.trim="manual.customer_contact" required placeholder="+36... vagy e-mail" /></label>
-            <label>Ügyfél megjegyzés <textarea v-model.trim="manual.customer_note" rows="4" placeholder="pl. kapucsengő, extra kérés, előzmény"></textarea></label>
-            <div class="modal-actions"><button class="button" type="button" @click="closeManualModal">Mégse</button><button class="button primary" :disabled="savingManual || !manual.time">{{ savingManual ? 'Mentés…' : 'Foglalás mentése' }}</button></div>
+            <label>Vendég neve
+              <input ref="manualNameInput" v-model.trim="manual.customer_name" type="text" required minlength="2" maxlength="120" autocomplete="name" placeholder="pl. Kovács Anna" />
+              <small v-if="manualNameError" class="field-error">{{ manualNameError }}</small>
+            </label>
+            <label>E-mail cím
+              <input v-model.trim="manual.customer_contact" type="email" required maxlength="160" autocomplete="email" placeholder="anna@example.com" />
+              <small v-if="manualEmailError" class="field-error">{{ manualEmailError }}</small>
+            </label>
+            <label>Ügyfél megjegyzés
+              <textarea v-model.trim="manual.customer_note" rows="4" minlength="3" maxlength="800" placeholder="pl. kapucsengő, extra kérés, előzmény"></textarea>
+              <small v-if="manualNoteError" class="field-error">{{ manualNoteError }}</small>
+            </label>
+            <div class="modal-actions"><button class="button" type="button" @click="closeManualModal">Mégse</button><button class="button primary" :disabled="savingManual || !manualValid">{{ savingManual ? 'Mentés…' : 'Foglalás mentése' }}</button></div>
           </form>
         </section>
       </div>

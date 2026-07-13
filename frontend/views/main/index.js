@@ -8,6 +8,9 @@ const {
   formatDuration,
   formatPrice,
   downloadIcs,
+  isPersonName,
+  isEmail,
+  isValidOptionalNote,
   useToasts
 } = window.App;
 
@@ -51,7 +54,28 @@ createApp({
     },
 
     formValid() {
-      return this.form.customer_name.length > 1 && this.form.customer_contact.length > 3;
+      return isPersonName(this.form.customer_name)
+        && isEmail(this.form.customer_contact)
+        && isValidOptionalNote(this.form.customer_note);
+    },
+
+    nameError() {
+      if (!this.form.customer_name) return '';
+      return isPersonName(this.form.customer_name)
+        ? ''
+        : 'Csak valódi nevet adj meg: betűk, szóköz, kötőjel, pont vagy aposztróf használható.';
+    },
+
+    emailError() {
+      if (!this.form.customer_contact) return '';
+      return isEmail(this.form.customer_contact) ? '' : 'Adj meg egy érvényes e-mail címet.';
+    },
+
+    noteError() {
+      if (!this.form.customer_note) return '';
+      return isValidOptionalNote(this.form.customer_note)
+        ? ''
+        : 'A megjegyzés legalább 3, legfeljebb 800 karakter legyen.';
     },
 
     phoneHref() {

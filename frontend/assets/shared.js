@@ -54,6 +54,24 @@
     return `${forint.toLocaleString('hu-HU')} Ft`;
   }
 
+  function isPersonName(value) {
+    const name = String(value || '').trim();
+    if (name.length < 2 || name.length > 120) return false;
+    const letters = name.match(/\p{L}/gu) || [];
+    return letters.length >= 2 && /^[\p{L}\p{M}][\p{L}\p{M}\s.'’\-]*$/u.test(name);
+  }
+
+  function isEmail(value) {
+    const email = String(value || '').trim();
+    if (!email || email.length > 160) return false;
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
+  function isValidOptionalNote(value) {
+    const note = String(value || '').trim();
+    return note === '' || (note.length >= 3 && note.length <= 800);
+  }
+
   function escapeHtml(value) {
     return String(value ?? '')
       .replaceAll('&', '&amp;')
@@ -162,6 +180,9 @@
     formatDateLong,
     formatDuration,
     formatPrice,
+    isPersonName,
+    isEmail,
+    isValidOptionalNote,
     groupSlotsByPeriod,
     downloadIcs,
     useToasts,

@@ -49,6 +49,11 @@ class Business extends Model
         return $this->hasMany(Booking::class);
     }
 
+    public function users(): HasMany
+    {
+        return $this->hasMany(User::class);
+    }
+
     public function blockedTimes(): HasMany
     {
         return $this->hasMany(BlockedTime::class);
@@ -62,5 +67,10 @@ class Business extends Model
     public function faqs(): HasMany
     {
         return $this->hasMany(Faq::class);
+    }
+
+    public function emailLogs(): HasMany
+    {
+        return $this->hasMany(EmailLog::class);
     }
 }

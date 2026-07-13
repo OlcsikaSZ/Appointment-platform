@@ -1,5 +1,5 @@
 const { createApp, reactive } = Vue;
-const { api, todayKey, addDaysKey, parseKey, formatDateLong, useToasts, formatPrice } = window.App;
+const { api, todayKey, addDaysKey, parseKey, formatDateLong, useToasts, formatPrice, isPersonName, isEmail, isValidOptionalNote } = window.App;
 
 const STATUS_LABELS = {
   booked: 'Foglalva',
@@ -185,6 +185,34 @@ createApp({
         .filter((item) => [item.customer_name, item.customer_contact, item.customer_note, item.service_name]
           .some((value) => String(value || '').toLocaleLowerCase('hu-HU').includes(query)))
         .slice(0, 8);
+    },
+
+    manualValid() {
+      return !!this.manual.service_id
+        && !!this.manual.date
+        && !!this.manual.time
+        && isPersonName(this.manual.customer_name)
+        && isEmail(this.manual.customer_contact)
+        && isValidOptionalNote(this.manual.customer_note);
+    },
+
+    manualNameError() {
+      if (!this.manual.customer_name) return '';
+      return isPersonName(this.manual.customer_name)
+        ? ''
+        : 'Csak valódi nevet adj meg: betűk, szóköz, kötőjel, pont vagy aposztróf használható.';
+    },
+
+    manualEmailError() {
+      if (!this.manual.customer_contact) return '';
+      return isEmail(this.manual.customer_contact) ? '' : 'Adj meg egy érvényes e-mail címet.';
+    },
+
+    manualNoteError() {
+      if (!this.manual.customer_note) return '';
+      return isValidOptionalNote(this.manual.customer_note)
+        ? ''
+        : 'A megjegyzés legalább 3, legfeljebb 800 karakter legyen.';
     },
 
     blockGroups() {
@@ -594,6 +622,11 @@ createApp({
     },
 
     async saveManualBooking() {
+      if (!this.manualValid) {
+        this.toasts.error('Ellenőrizd a nevet, az e-mail címet, a megjegyzést és az időpontot.');
+        return;
+      }
+
       this.savingManual = true;
       try {
         await api(`/admin/businesses/${window.App.config.businessId}/bookings`, {

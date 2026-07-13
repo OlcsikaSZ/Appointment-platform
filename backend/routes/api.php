@@ -20,6 +20,10 @@ Route::prefix('v1')->group(function (): void {
         '/bookings/{booking:manage_token}/slots',
         [PublicBookingController::class, 'manageSlots']
     );
+    Route::get(
+        '/bookings/{booking:manage_token}/availability',
+        [PublicBookingController::class, 'manageAvailability']
+    );
 
     Route::post('/bookings/{booking:manage_token}/cancel', [PublicBookingController::class, 'cancel']);
     Route::post('/bookings/{booking:manage_token}/reschedule', [PublicBookingController::class, 'reschedule']);
@@ -45,6 +49,7 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/businesses/{business}/blocked-times', [AdminBookingController::class, 'block']);
         Route::delete('/blocked-times/{blockedTime}', [AdminBookingController::class, 'destroyBlock']);
         Route::patch('/bookings/{booking}/status', [AdminBookingController::class, 'updateStatus']);
+        Route::get('/businesses/{business}/email-logs', [AdminBookingController::class, 'emailLogs']);
 
         Route::get('/businesses/{business}/website', [AdminWebsiteController::class, 'show']);
         Route::patch('/businesses/{business}/website', [AdminWebsiteController::class, 'update']);

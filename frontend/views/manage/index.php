@@ -27,7 +27,7 @@
       <nav><a href="<?= route_url('main') ?>">Új foglalás</a></nav>
     </header>
 
-    <main class="shell narrow">
+    <main class="shell narrow manage-shell">
       <p v-if="!token" class="empty">Hiányzik a kezelő link a foglalásodhoz. Kérjük, használd a visszaigazolásban kapott linket.</p>
 
       <template v-else>
@@ -36,7 +36,7 @@
         </div>
 
         <template v-else-if="booking">
-          <div class="ticket">
+          <div class="ticket manage-ticket">
             <div class="stub-head">
               <div>
                 <p class="eyebrow">Kezelő link</p>
@@ -46,7 +46,7 @@
             </div>
             <dl>
               <div><dt>Vendég</dt><dd>{{ booking.customer_name }}</dd></div>
-              <div><dt>Elérhetőség</dt><dd class="mono">{{ booking.customer_contact }}</dd></div>
+              <div><dt>E-mail</dt><dd class="mono">{{ booking.customer_contact }}</dd></div>
               <div v-if="booking.customer_note"><dt>Megjegyzés</dt><dd>{{ booking.customer_note }}</dd></div>
             </dl>
             <div class="perforation"></div>
@@ -56,58 +56,109 @@
             </dl>
           </div>
 
-          <section v-if="isActive" class="panel" style="margin-top:20px;">
-            <h2 style="font-size:17px;">Időpont módosítása</h2>
-            <p class="lead" style="font-size:13.5px;margin-top:4px;">Válassz új dátumot és időpontot — a régi helyed automatikusan felszabadul.</p>
-
-            <div class="date-strip">
-              <button
-                v-for="opt in dateOptions"
-                :key="opt.key"
-                class="date-pill"
-                :class="{ selected: newDate === opt.key, today: isToday(opt.key) }"
-                type="button"
-                @click="pickDate(opt.key)"
-              >
-                <span class="dow">{{ opt.dow }}</span>
-                <span class="dnum">{{ opt.day }}</span>
-              </button>
-            </div>
-
-            <div v-if="loadingSlots" class="slot-grid" style="margin-top:14px;">
-              <div class="skeleton" style="height:44px;" v-for="n in 6" :key="n"></div>
-            </div>
-            <p v-else-if="!slots.length" class="empty">Erre a napra nincs szabad időpont.</p>
-            <template v-else>
-              <div v-for="[period, items] in groupedSlots" :key="period" class="slot-period">
-                <h4>{{ period }}</h4>
-                <div class="slot-grid">
-                  <button
-                    v-for="slot in items"
-                    :key="slot.time"
-                    class="slot"
-                    :class="{ selected: newTime === slot.time }"
-                    type="button"
-                    @click="newTime = slot.time"
-                  >{{ slot.label }}</button>
-                </div>
+          <section v-if="isActive" class="panel manage-calendar-panel">
+            <div class="manage-section-head">
+              <div>
+                <p class="eyebrow">Időpont módosítása</p>
+                <h2>Válassz új napot és időpontot</h2>
+                <p class="lead">A régi helyed csak sikeres módosítás után szabadul fel.</p>
               </div>
-            </template>
+            </div>
 
-            <div class="button-row">
-              <button class="button primary" type="button" :disabled="!newTime || rescheduling" @click="reschedule">
+            <transition name="manage-calendar-view" mode="out-in">
+              <div v-if="bookingCalendarMode === 'month'" key="manage-month" class="manage-calendar-stage">
+                <div class="manage-calendar-toolbar">
+                  <div>
+                    <p class="eyebrow">Válassz napot</p>
+                    <h2>{{ monthLabel }}</h2>
+                  </div>
+                  <div class="manage-calendar-actions">
+                    <button class="button sm ghost" type="button" :disabled="!canMoveMonthBack" aria-label="Előző hónap" @click="moveMonth(-1)">‹</button>
+                    <button class="button sm" type="button" @click="goCurrentMonth">Aktuális hónap</button>
+                    <button class="button sm ghost" type="button" aria-label="Következő hónap" @click="moveMonth(1)">›</button>
+                  </div>
+                </div>
+
+                <div class="manage-month-weekdays" aria-hidden="true">
+                  <span>H</span><span>K</span><span>Sze</span><span>Cs</span><span>P</span><span>Szo</span><span>V</span>
+                </div>
+                <div class="manage-month-grid" role="grid" :aria-label="monthLabel">
+                  <button
+                    v-for="day in monthDays"
+                    :key="day.key"
+                    type="button"
+                    class="manage-month-day"
+                    :class="{ 'outside-month': !day.inCurrentMonth, today: day.isToday, 'current-booking': day.isCurrentBooking, disabled: day.disabled }"
+                    :disabled="day.disabled"
+                    @click="openBookingDay(day.key)"
+                  >
+                    <span class="manage-month-day-number">{{ day.dayNumber }}</span>
+                    <small v-if="day.isToday">Ma</small>
+                    <i v-if="!day.disabled" aria-hidden="true">Megnyitás →</i>
+                  </button>
+                </div>
+                <p class="manage-calendar-hint">Kattints egy napra, majd válassz a szolgáltatásodhoz ténylegesen elérhető idősávok közül.</p>
+              </div>
+
+              <div v-else key="manage-day" class="manage-calendar-stage manage-day-stage">
+                <div class="manage-day-toolbar">
+                  <div>
+                    <p class="eyebrow">Választott nap</p>
+                    <h2>{{ selectedDateLabel }}</h2>
+                  </div>
+                  <span class="manage-selected-service">{{ booking.service_name }}</span>
+                </div>
+
+                <div v-if="loadingSlots" class="manage-calendar-loading">
+                  <span class="spinner"></span>
+                  <span>Szabad időpontok betöltése…</span>
+                </div>
+
+                <p v-else-if="!workingHours.length" class="empty">Ezen a napon nincs beállított nyitvatartás — válassz másik napot.</p>
+
+                <div v-else class="manage-day-timeline">
+                  <div v-for="hour in timelineHours" :key="hour" class="manage-hour-row">
+                    <span class="manage-hour-label">{{ String(hour).padStart(2, '0') }}:00</span>
+                    <div class="manage-quarter-grid">
+                      <button
+                        v-for="cell in quarterCellsForHour(hour)"
+                        :key="cell.time"
+                        type="button"
+                        class="manage-quarter-slot"
+                        :class="{ available: cell.available, selected: cell.selected, current: cell.current }"
+                        :disabled="!cell.available"
+                        :title="cell.slot ? `${cell.slot.time}–${cell.slot.endTime}` : `${cell.time} — nem elérhető`"
+                        @click="pickSlot(cell.slot)"
+                      >
+                        <template v-if="cell.available">
+                          <strong>{{ cell.time }}</strong>
+                          <small>{{ cell.current ? 'Jelenlegi időpont' : cell.slot.endTime + '-ig' }}</small>
+                        </template>
+                        <span v-else>—</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <p v-if="!loadingSlots && workingHours.length && !slots.length" class="empty manage-day-empty">Erre a napra nincs szabad időpont — lépj vissza, és válassz másik napot.</p>
+              </div>
+            </transition>
+
+            <div class="button-row manage-actions-row">
+              <button v-if="bookingCalendarMode === 'day'" class="button" type="button" @click="backToMonth">← Vissza a havi naptárhoz</button>
+              <button v-if="bookingCalendarMode === 'day'" class="button primary" type="button" :disabled="!scheduleChanged || rescheduling" @click="reschedule">
                 {{ rescheduling ? 'Mentés…' : 'Módosítás mentése' }}
               </button>
-              <button v-if="!confirmingCancel" class="button danger" type="button" @click="confirmingCancel = true">Lemondás</button>
+              <button v-if="!confirmingCancel" class="button danger" type="button" @click="confirmingCancel = true">Foglalás lemondása</button>
               <template v-else>
-                <span class="lead" style="align-self:center;font-size:13.5px;">Biztosan lemondod?</span>
+                <span class="lead cancel-question">Biztosan lemondod?</span>
                 <button class="button danger" type="button" :disabled="cancelling" @click="cancelBooking">Igen, lemondom</button>
                 <button class="button ghost" type="button" @click="confirmingCancel = false">Mégse</button>
               </template>
             </div>
           </section>
 
-          <div v-else class="notice" style="margin-top:20px;">
+          <div v-else class="notice manage-inactive-notice">
             Ez a foglalás már nem aktív, ezért nem módosítható.
           </div>
         </template>

@@ -363,6 +363,8 @@ textarea { min-height: 88px; resize: vertical; }
 input:hover, select:hover, textarea:hover { border-color: var(--line-strong); }
 input:focus, select:focus, textarea:focus { border-color: var(--ink); }
 ::placeholder { color: #a39d8c; }
+.field-error { display:block; margin-top:6px; color:var(--rose); font-size:12px; line-height:1.45; font-weight:700; }
+input:invalid:not(:placeholder-shown), textarea:invalid:not(:placeholder-shown) { border-color:rgba(190,68,78,.55); }
 
 .booking-form, .form-row, .login-box {
   display: grid;

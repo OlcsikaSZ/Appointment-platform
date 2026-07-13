@@ -1,1 +1,74 @@
-/* Manage booking view specific styles can go here. */
+/* Foglalás kezelése — havi + napi naptáras módosítás */
+.manage-shell { padding-bottom: 72px; }
+.manage-ticket { margin-bottom: 20px; }
+.manage-calendar-panel { margin-top: 20px; }
+.manage-section-head { margin-bottom: 18px; }
+.manage-section-head .lead { margin-top: 5px; font-size: 13.5px; }
+.manage-calendar-stage { min-height: 360px; }
+.manage-calendar-view-enter-active,
+.manage-calendar-view-leave-active { transition: opacity .22s ease, transform .26s cubic-bezier(.2,.78,.25,1); }
+.manage-calendar-view-enter-from { opacity: 0; transform: translateY(14px) scale(.992); }
+.manage-calendar-view-leave-to { opacity: 0; transform: translateY(-10px) scale(.995); }
+
+.manage-calendar-toolbar,
+.manage-day-toolbar { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; margin-bottom:16px; }
+.manage-calendar-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+.manage-calendar-actions .button[disabled] { opacity:.4; cursor:not-allowed; }
+.manage-month-weekdays { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); border:1px solid var(--line); border-bottom:0; border-radius:16px 16px 0 0; overflow:hidden; background:var(--paper-sunken); }
+.manage-month-weekdays span { padding:9px 4px; text-align:center; color:var(--muted); font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; }
+.manage-month-grid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); border-top:1px solid var(--line); border-left:1px solid var(--line); border-radius:0 0 16px 16px; overflow:hidden; background:var(--line); }
+.manage-month-day { min-height:96px; padding:10px; display:flex; flex-direction:column; align-items:flex-start; gap:5px; border:0; border-right:1px solid var(--line); border-bottom:1px solid var(--line); background:#fffdf9; color:var(--ink); cursor:pointer; text-align:left; transition:background .16s ease, box-shadow .16s ease, transform .14s ease; }
+.manage-month-day:hover:not(:disabled) { background:#fff7e9; box-shadow:inset 0 0 0 2px rgba(226,163,59,.36); z-index:1; }
+.manage-month-day:active:not(:disabled) { transform:scale(.985); }
+.manage-month-day.outside-month { background:#f2ede4; color:#8e877a; }
+.manage-month-day.disabled { opacity:.44; cursor:not-allowed; }
+.manage-month-day.today { background:linear-gradient(145deg,#fffdf9,#fff3dd); }
+.manage-month-day.current-booking { box-shadow:inset 0 0 0 2px rgba(28,37,65,.22); }
+.manage-month-day.current-booking::after { content:'Jelenlegi'; margin-top:auto; color:var(--ink-soft); font-size:9px; font-weight:800; text-transform:uppercase; }
+.manage-month-day-number { width:29px; height:29px; display:grid; place-items:center; border-radius:50%; font-family:var(--font-mono); font-size:12px; font-weight:700; }
+.manage-month-day.today .manage-month-day-number { background:var(--ink); color:#fff; }
+.manage-month-day small { color:var(--amber-ink); font-size:9px; font-weight:800; text-transform:uppercase; }
+.manage-month-day i { margin-top:auto; color:var(--muted); font-style:normal; font-size:9px; opacity:0; transform:translateY(3px); transition:opacity .16s ease, transform .16s ease; }
+.manage-month-day:hover i { opacity:1; transform:translateY(0); }
+.manage-calendar-hint { margin-top:12px; color:var(--muted); font-size:12.5px; }
+
+.manage-selected-service { max-width:320px; padding:10px 13px; border:1px solid var(--line); border-radius:999px; background:#fffaf3; color:var(--ink-soft); font-size:12px; font-weight:700; }
+.manage-calendar-loading { min-height:220px; display:grid; place-items:center; align-content:center; gap:10px; color:var(--muted); }
+.manage-day-timeline { border:1px solid var(--line); border-radius:16px; overflow:hidden; background:#fffdf9; }
+.manage-hour-row { display:grid; grid-template-columns:78px 1fr; min-height:68px; border-top:1px solid var(--line); }
+.manage-hour-row:first-child { border-top:0; }
+.manage-hour-label { padding:9px 10px 0 0; text-align:right; color:var(--muted); font-family:var(--font-mono); font-size:11px; background:#f8f3ea; }
+.manage-quarter-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); }
+.manage-quarter-slot { min-width:0; min-height:68px; border:0; border-left:1px dashed rgba(205,192,163,.7); background:#efede7; color:#a49d91; cursor:not-allowed; transition:background .15s ease, transform .13s ease, box-shadow .15s ease; }
+.manage-quarter-slot:first-child { border-left:1px solid var(--line); }
+.manage-quarter-slot.available { background:linear-gradient(145deg,#fffdf9,#fff4df); color:var(--ink); cursor:pointer; }
+.manage-quarter-slot.available:hover { background:#f8dfb4; box-shadow:inset 0 0 0 1px var(--amber); z-index:1; }
+.manage-quarter-slot.current:not(.selected) { box-shadow:inset 0 0 0 2px rgba(28,37,65,.28); }
+.manage-quarter-slot.selected { background:var(--ink); color:#fff; box-shadow:inset 0 0 0 2px var(--amber); transform:scale(.985); }
+.manage-quarter-slot strong,
+.manage-quarter-slot small { display:block; }
+.manage-quarter-slot strong { font-family:var(--font-mono); font-size:12px; }
+.manage-quarter-slot small { margin-top:2px; font-size:9.5px; opacity:.72; }
+.manage-day-empty { margin-top:12px; }
+.manage-actions-row { align-items:center; }
+.cancel-question { align-self:center; font-size:13.5px; margin:0; }
+.manage-inactive-notice { margin-top:20px; }
+
+@media (max-width:760px) {
+  .manage-calendar-toolbar,
+  .manage-day-toolbar { flex-direction:column; }
+  .manage-calendar-actions { justify-content:flex-start; }
+  .manage-month-day { min-height:76px; padding:6px; }
+  .manage-month-day i { display:none; }
+  .manage-month-day-number { width:24px; height:24px; font-size:10px; }
+  .manage-selected-service { max-width:100%; }
+  .manage-hour-row { grid-template-columns:58px 1fr; }
+  .manage-quarter-slot { min-height:62px; }
+  .manage-quarter-slot small { display:none; }
+}
+
+@media (max-width:520px) {
+  .manage-month-weekdays span { font-size:8px; padding:7px 1px; }
+  .manage-month-day { min-height:62px; }
+  .manage-quarter-slot strong { font-size:10px; }
+}

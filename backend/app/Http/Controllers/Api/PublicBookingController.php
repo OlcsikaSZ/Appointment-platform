@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Business;
 use App\Models\Service;
+use App\Rules\PersonName;
+use App\Services\BookingMailService;
 use App\Services\SlotService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
@@ -16,8 +18,10 @@ use Illuminate\Validation\Rule;
 
 class PublicBookingController extends Controller
 {
-    public function __construct(private readonly SlotService $slotService)
-    {
+    public function __construct(
+        private readonly SlotService $slotService,
+        private readonly BookingMailService $bookingMailService,
+    ) {
     }
 
     public function business(Business $business): JsonResponse
@@ -121,15 +125,17 @@ class PublicBookingController extends Controller
             'service_id' => ['required', 'integer', Rule::exists('services', 'id')->where(fn ($query) => $query->where('business_id', $business->id)->where('active', true))],
             'date' => ['required', 'date_format:Y-m-d'],
             'time' => ['required', 'date_format:H:i'],
-            'customer_name' => ['required', 'string', 'max:120'],
-            'customer_contact' => ['required', 'string', 'max:160'],
-            'customer_note' => ['nullable', 'string', 'max:800'],
+            'customer_name' => ['required', 'string', new PersonName()],
+            'customer_contact' => ['required', 'string', 'email:rfc', 'max:160'],
+            'customer_note' => ['nullable', 'string', 'min:3', 'max:800'],
         ]);
 
         $service = Service::where('business_id', $business->id)->where('active', true)->findOrFail($validated['service_id']);
 
-        return $this->withBookingDateLock($business, $validated['date'], function () use ($business, $service, $validated): JsonResponse {
-            return DB::transaction(function () use ($business, $service, $validated): JsonResponse {
+        $createdBooking = null;
+
+        $response = $this->withBookingDateLock($business, $validated['date'], function () use ($business, $service, $validated, &$createdBooking): JsonResponse {
+            return DB::transaction(function () use ($business, $service, $validated, &$createdBooking): JsonResponse {
                 $slot = collect($this->slotService->slotsFor($business, $service, $validated['date']))
                     ->firstWhere('time', $validated['time']);
 
@@ -160,12 +166,20 @@ class PublicBookingController extends Controller
                     throw $exception;
                 }
 
+                $createdBooking = $booking->fresh(['business', 'service']);
+
                 return response()->json([
                     'data' => $booking,
                     'manageUrl' => './manage?token='.$booking->manage_token,
                 ], 201);
             });
         });
+
+        if ($createdBooking) {
+            $this->bookingMailService->bookingCreated($createdBooking);
+        }
+
+        return $response;
     }
 
     public function show(Booking $booking): JsonResponse
@@ -193,6 +207,33 @@ class PublicBookingController extends Controller
         ]);
     }
 
+    public function manageAvailability(Request $request, Booking $booking): JsonResponse
+    {
+        $validated = $request->validate([
+            'date' => ['required', 'date_format:Y-m-d'],
+        ]);
+
+        if ($booking->status !== Booking::STATUS_BOOKED) {
+            return response()->json(['message' => 'Ez a foglalás már nem aktív.'], 409);
+        }
+
+        $business = $booking->business;
+        $service = $booking->service;
+        $day = \Carbon\CarbonImmutable::parse($validated['date'], $business->timezone)->startOfDay();
+        $weekday = (int) $day->dayOfWeek;
+
+        return response()->json([
+            'data' => [
+                'date' => $validated['date'],
+                'slots' => $this->slotService->slotsFor($business, $service, $validated['date'], $booking->id),
+                'workingHours' => $business->workingHours()
+                    ->where('weekday', $weekday)
+                    ->orderBy('start_time')
+                    ->get(['start_time', 'end_time']),
+            ],
+        ]);
+    }
+
     public function cancel(Booking $booking): JsonResponse
     {
         if ($booking->status !== Booking::STATUS_BOOKED) {
@@ -203,7 +244,10 @@ class PublicBookingController extends Controller
             'status' => Booking::STATUS_CANCELLED,
         ]);
 
-        return response()->json(['data' => $booking->fresh()]);
+        $fresh = $booking->fresh(['business', 'service']);
+        $this->bookingMailService->bookingCancelled($fresh);
+
+        return response()->json(['data' => $fresh]);
     }
 
     public function reschedule(Request $request, Booking $booking): JsonResponse
@@ -219,9 +263,21 @@ class PublicBookingController extends Controller
 
         $business = $booking->business;
         $service = $booking->service;
+        $previousSchedule = [
+            'date' => $booking->date->format('Y-m-d'),
+            'start_time' => $booking->start_time,
+            'end_time' => $booking->end_time,
+        ];
 
-        return $this->withBookingDateLock($business, $validated['date'], function () use ($booking, $business, $service, $validated): JsonResponse {
-            return DB::transaction(function () use ($booking, $business, $service, $validated): JsonResponse {
+        if ($validated['date'] === $previousSchedule['date']
+            && $validated['time'] === substr($previousSchedule['start_time'], 0, 5)) {
+            return response()->json(['message' => 'Az új időpont megegyezik a jelenlegi foglalással.'], 422);
+        }
+
+        $updatedBooking = null;
+
+        $response = $this->withBookingDateLock($business, $validated['date'], function () use ($booking, $business, $service, $validated, &$updatedBooking): JsonResponse {
+            return DB::transaction(function () use ($booking, $business, $service, $validated, &$updatedBooking): JsonResponse {
                 $slot = collect($this->slotService->slotsFor($business, $service, $validated['date'], $booking->id))
                     ->firstWhere('time', $validated['time']);
 
@@ -245,9 +301,17 @@ class PublicBookingController extends Controller
                     throw $exception;
                 }
 
-                return response()->json(['data' => $booking->fresh()]);
+                $updatedBooking = $booking->fresh(['business', 'service']);
+
+                return response()->json(['data' => $updatedBooking]);
             });
         });
+
+        if ($updatedBooking) {
+            $this->bookingMailService->bookingRescheduled($updatedBooking, $previousSchedule);
+        }
+
+        return $response;
     }
 
     private function withBookingDateLock(Business $business, string $date, callable $callback): JsonResponse
