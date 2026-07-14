@@ -14,6 +14,7 @@ class EmailLog extends Model
     public const STATUS_FAILED = 'failed';
 
     protected $fillable = [
+        'resent_from_id',
         'business_id',
         'booking_id',
         'event_type',
@@ -22,10 +23,12 @@ class EmailLog extends Model
         'subject',
         'status',
         'error_message',
+        'payload',
         'sent_at',
     ];
 
     protected $casts = [
+        'payload' => 'array',
         'sent_at' => 'datetime',
     ];
 

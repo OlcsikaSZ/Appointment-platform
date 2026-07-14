@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AdminBookingController;
+use App\Http\Controllers\Api\AdminEmailController;
 use App\Http\Controllers\Api\AdminServiceController;
 use App\Http\Controllers\Api\AdminWebsiteController;
 use App\Http\Controllers\Api\AuthController;
@@ -49,7 +50,11 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/businesses/{business}/blocked-times', [AdminBookingController::class, 'block']);
         Route::delete('/blocked-times/{blockedTime}', [AdminBookingController::class, 'destroyBlock']);
         Route::patch('/bookings/{booking}/status', [AdminBookingController::class, 'updateStatus']);
-        Route::get('/businesses/{business}/email-logs', [AdminBookingController::class, 'emailLogs']);
+        Route::get('/businesses/{business}/email-logs', [AdminEmailController::class, 'index']);
+        Route::get('/businesses/{business}/email-settings', [AdminEmailController::class, 'showSettings']);
+        Route::patch('/businesses/{business}/email-settings', [AdminEmailController::class, 'updateSettings']);
+        Route::post('/businesses/{business}/email-test', [AdminEmailController::class, 'sendTest']);
+        Route::post('/email-logs/{emailLog}/resend', [AdminEmailController::class, 'resend']);
 
         Route::get('/businesses/{business}/website', [AdminWebsiteController::class, 'show']);
         Route::patch('/businesses/{business}/website', [AdminWebsiteController::class, 'update']);

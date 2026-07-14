@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Business extends Model
 {
@@ -72,5 +73,10 @@ class Business extends Model
     public function emailLogs(): HasMany
     {
         return $this->hasMany(EmailLog::class);
+    }
+
+    public function emailSetting(): HasOne
+    {
+        return $this->hasOne(EmailSetting::class);
     }
 }

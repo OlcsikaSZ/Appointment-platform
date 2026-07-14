@@ -58,6 +58,7 @@
         <button :class="{active: activeTab === 'calendar'}" @click="activeTab = 'calendar'">Naptár</button>
         <button :class="{active: activeTab === 'services'}" @click="activeTab = 'services'">Szolgáltatások</button>
         <button :class="{active: activeTab === 'website'}" @click="openWebsiteTab">Weboldal</button>
+        <button :class="{active: activeTab === 'email'}" @click="openEmailTab">E-mailek</button>
       </div>
 
       <section v-if="activeTab === 'calendar'" class="admin-single-column">
@@ -289,6 +290,367 @@
         </div>
       </section>
 
+      <section v-if="activeTab === 'email'" class="email-admin-section">
+        <div class="email-stat-grid">
+          <article class="email-stat-card">
+            <span>Összes próbálkozás</span>
+            <strong>{{ emailStats.total ?? '–' }}</strong>
+          </article>
+          <article class="email-stat-card success">
+            <span>Sikeres</span>
+            <strong>{{ emailStats.sent ?? '–' }}</strong>
+          </article>
+          <article class="email-stat-card failed">
+            <span>Sikertelen</span>
+            <strong>{{ emailStats.failed ?? '–' }}</strong>
+          </article>
+          <article class="email-stat-card accent">
+            <span>Sikerességi arány</span>
+            <strong>{{ emailStats.success_rate ?? 0 }}%</strong>
+          </article>
+        </div>
+
+        <section
+          ref="emailLogPanel"
+          class="panel email-log-panel"
+        >
+          <div class="section-title email-section-title">
+            <div>
+              <p class="eyebrow">Email napló</p>
+              <h2>Kiküldések és hibák</h2>
+              <p class="lead email-lead">Itt látod, melyik email ment ki, melyik hibázott, és szükség esetén egy kattintással újraküldheted.</p>
+            </div>
+            <button class="button sm" type="button" :disabled="emailLoading" @click="loadEmailLogs">
+              <span v-if="emailLoading" class="spinner"></span>{{ emailLoading ? 'Frissítés…' : 'Frissítés' }}
+            </button>
+          </div>
+
+          <div class="email-system-strip">
+            <span><b>Mailer:</b> {{ emailSystem.mailer || '–' }}</span>
+            <span><b>Technikai feladó:</b> {{ emailSystem.from_address || '–' }}</span>
+            <span><b>Utolsó sikeres:</b> {{ formatDateTime(emailStats.last_sent_at) }}</span>
+          </div>
+
+          <div class="email-filter-bar">
+            <input v-model.trim="emailFilters.q" type="search" placeholder="Keresés címzett / tárgy / vendég / szolgáltatás" @keyup.enter="loadEmailLogs({ resetPage: true })" />
+            <select v-model="emailFilters.status" @change="loadEmailLogs({ resetPage: true })">
+              <option value="">Minden státusz</option>
+              <option value="sent">Sikeres</option>
+              <option value="failed">Sikertelen</option>
+            </select>
+            <select v-model="emailFilters.event_type" @change="loadEmailLogs">
+              <option value="">Minden esemény</option>
+              <option value="booking_created">Új foglalás</option>
+              <option value="booking_rescheduled">Módosítás</option>
+              <option value="booking_cancelled">Lemondás</option>
+              <option value="email_test">Teszt email</option>
+            </select>
+            <select v-model="emailFilters.recipient_type"  @change="loadEmailLogs({ resetPage: true })">
+              <option value="">Minden címzettípus</option>
+              <option value="customer">Ügyfél</option>
+              <option value="admin">Admin</option>
+            </select>
+            <button class="button sm" type="button" @click="loadEmailLogs({ resetPage: true })">Keresés</button>
+            <button class="button sm ghost" type="button" @click="resetEmailFilters">Szűrők törlése</button>
+          </div>
+
+          <div
+            v-if="emailPagination.total > 0"
+            class="email-pagination email-pagination-top"
+          >
+            <div class="email-pagination-meta">
+
+              <span class="email-pagination-summary">
+                {{ emailPagination.from }}–{{ emailPagination.to }}
+                / {{ emailPagination.total }} esemény
+              </span>
+
+              <label class="email-page-size">
+                <select
+                  v-model.number="emailPagination.per_page"
+                  @change="changeEmailPageSize"
+                >
+                  <option
+                    v-for="size in emailPageSizeOptions"
+                    :key="size"
+                    :value="size"
+                  >
+                    {{ size }}
+                  </option>
+                </select>
+
+                <span>esemény / oldal</span>
+              </label>
+
+            </div>
+
+            <nav
+              class="email-pager"
+              aria-label="Email napló lapozás"
+            >
+              <button
+                class="email-page-button email-page-arrow"
+                type="button"
+                :disabled="emailPagination.current_page <= 1 || emailLoading"
+                @click="goToEmailPage(emailPagination.current_page - 1)"
+              >
+                ←
+              </button>
+
+              <template
+                v-for="page in emailPaginationPages"
+                :key="page"
+              >
+                <span
+                  v-if="typeof page !== 'number'"
+                  class="email-page-ellipsis"
+                >
+                  …
+                </span>
+
+                <button
+                  v-else
+                  class="email-page-button"
+                  :class="{
+                    active: page === emailPagination.current_page
+                  }"
+                  type="button"
+                  :disabled="emailLoading"
+                  :aria-current="
+                    page === emailPagination.current_page
+                      ? 'page'
+                      : null
+                  "
+                  @click="goToEmailPage(page)"
+                >
+                  {{ page }}
+                </button>
+              </template>
+
+              <button
+                class="email-page-button email-page-arrow"
+                type="button"
+                :disabled="
+                  emailPagination.current_page >= emailPagination.last_page
+                  || emailLoading
+                "
+                @click="goToEmailPage(emailPagination.current_page + 1)"
+              >
+                →
+              </button>
+            </nav>
+          </div>
+
+          <div v-if="emailLoading && !emailLogs.length" class="empty">Email napló betöltése…</div>
+          <div v-else-if="!emailLogs.length" class="empty">A megadott szűrőkkel nincs emailnapló.</div>
+          <div v-else class="email-log-table-wrap">
+            <table class="email-log-table">
+              <thead>
+                <tr>
+                  <th>Időpont</th>
+                  <th>Címzett</th>
+                  <th>Típus</th>
+                  <th>Esemény</th>
+                  <th>Tárgy</th>
+                  <th>Státusz</th>
+                  <th>Műveletek</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="log in emailLogs" :key="log.id" :class="`email-row-${log.status}`">
+                  <td class="email-log-date">{{ formatDateTime(log.sent_at || log.created_at) }}</td>
+                  <td><strong>{{ log.recipient_email }}</strong><small v-if="log.booking">{{ log.booking.customer_name }} · {{ log.booking.service_name }}</small></td>
+                  <td><span class="email-recipient-pill" :class="log.recipient_type">{{ emailRecipientLabel(log.recipient_type) }}</span></td>
+                  <td>{{ emailEventLabel(log.event_type) }}</td>
+                  <td class="email-subject-cell">{{ log.subject }}</td>
+                  <td><span class="email-status-badge" :class="log.status">{{ emailStatusLabel(log.status) }}</span></td>
+                  <td>
+                    <div class="email-row-actions">
+                      <button class="button sm" type="button" @click="openEmailLog(log)">Részletek</button>
+                      <button class="button sm" type="button" :disabled="resendingEmailLogId === log.id" @click="resendEmail(log)">
+                        {{ resendingEmailLogId === log.id ? 'Küldés…' : 'Újraküldés' }}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div
+            v-if="emailPagination.total > 0"
+            class="email-pagination email-pagination-bottom"
+          >
+            <span class="email-pagination-summary">
+              {{ emailPagination.from }}–{{ emailPagination.to }}
+              / {{ emailPagination.total }} esemény
+            </span>
+
+            <nav
+              class="email-pager"
+              aria-label="Email napló alsó lapozás"
+            >
+              <button
+                class="email-page-button email-page-arrow"
+                type="button"
+                :disabled="emailPagination.current_page <= 1 || emailLoading"
+                @click="goToEmailPage(emailPagination.current_page - 1)"
+              >
+                ←
+              </button>
+
+              <template
+                v-for="page in emailPaginationPages"
+                :key="page"
+              >
+                <span
+                  v-if="typeof page !== 'number'"
+                  class="email-page-ellipsis"
+                >
+                  …
+                </span>
+
+                <button
+                  v-else
+                  class="email-page-button"
+                  :class="{
+                    active: page === emailPagination.current_page
+                  }"
+                  type="button"
+                  :disabled="emailLoading"
+                  @click="goToEmailPage(page)"
+                >
+                  {{ page }}
+                </button>
+              </template>
+
+              <button
+                class="email-page-button email-page-arrow"
+                type="button"
+                :disabled="
+                  emailPagination.current_page >= emailPagination.last_page
+                  || emailLoading
+                "
+                @click="goToEmailPage(emailPagination.current_page + 1)"
+              >
+                →
+              </button>
+            </nav>
+          </div>
+        </section>
+
+        <section class="panel email-test-panel">
+          <div class="section-title">
+            <div>
+              <p class="eyebrow">Kézbesítési teszt</p>
+              <h2>Teszt email küldése</h2>
+              <p class="lead email-lead">Küldj valódi tesztlevelet anélkül, hogy új foglalást kellene létrehoznod.</p>
+            </div>
+          </div>
+          <form class="email-test-form" @submit.prevent="sendTestEmail">
+            <label>Címzett e-mail
+              <input v-model.trim="testEmail.recipient_email" type="email" required placeholder="teszt@example.com" />
+            </label>
+            <label>Nézet
+              <select v-model="testEmail.recipient_type">
+                <option value="customer">Ügyfél email</option>
+                <option value="admin">Admin email</option>
+              </select>
+            </label>
+            <label>Esemény
+              <select v-model="testEmail.event_type">
+                <option value="booking_created">Új foglalás</option>
+                <option value="booking_rescheduled">Módosítás</option>
+                <option value="booking_cancelled">Lemondás</option>
+              </select>
+            </label>
+            <button class="button primary" type="submit" :disabled="!testEmailValid || sendingTestEmail">
+              <span v-if="sendingTestEmail" class="spinner"></span>{{ sendingTestEmail ? 'Küldés…' : 'Teszt email küldése' }}
+            </button>
+          </form>
+        </section>
+
+        <section class="panel email-template-panel">
+          <div class="section-title email-section-title">
+            <div>
+              <p class="eyebrow">Email tartalom</p>
+              <h2>Feladó, sablonok és szövegek</h2>
+              <p class="lead email-lead">Az alapadatok – szolgáltatás, dátum, időpont, vendég és kezelő link – mindig benne maradnak. Itt a tárgyat, bevezető szöveget és láblécet szabhatod személyre.</p>
+            </div>
+            <div class="inline-actions">
+              <button class="button sm" type="button" @click="resetEmailSettingsToDefaults">Alapértékek</button>
+              <button class="button sm primary" type="button" :disabled="savingEmailSettings" @click="saveEmailSettings">
+                {{ savingEmailSettings ? 'Mentés…' : 'Email beállítások mentése' }}
+              </button>
+            </div>
+          </div>
+
+          <div class="email-global-settings">
+            <label>Feladó megjelenített neve
+              <input v-model.trim="emailSettings.sender_name" maxlength="160" :placeholder="business.name || 'Az Ön Vállalkozása'" />
+              <small>A technikai feladócímet továbbra is az SMTP/.env adja; itt a megjelenített név állítható.</small>
+            </label>
+            <label>Válaszcím (Reply-To)
+              <input v-model.trim="emailSettings.reply_to" type="email" maxlength="160" :placeholder="business.email || 'info@vallalkozas.hu'" />
+              <small>Ha üres, a vállalkozás Weboldal fülön megadott e-mail címe lesz használva.</small>
+            </label>
+            <label class="full">Email lábléc
+              <textarea v-model.trim="emailSettings.footer_text" rows="3" maxlength="1200"></textarea>
+            </label>
+          </div>
+
+          <div class="email-placeholder-box">
+            <strong>Használható változók</strong>
+            <div class="email-placeholder-list">
+              <code>{business_name}</code><code>{customer_name}</code><code>{customer_email}</code><code>{service_name}</code><code>{date}</code><code>{time}</code><code>{manage_url}</code>
+            </div>
+          </div>
+
+          <div class="email-template-switches">
+            <div class="email-switch-group">
+              <span>Címzett</span>
+              <button type="button" :class="{active: emailEditorRecipient === 'customer'}" @click="emailEditorRecipient = 'customer'">Ügyfél</button>
+              <button type="button" :class="{active: emailEditorRecipient === 'admin'}" @click="emailEditorRecipient = 'admin'">Admin</button>
+            </div>
+            <div class="email-switch-group">
+              <span>Esemény</span>
+              <button type="button" :class="{active: emailEditorEvent === 'booking_created'}" @click="emailEditorEvent = 'booking_created'">Új foglalás</button>
+              <button type="button" :class="{active: emailEditorEvent === 'booking_rescheduled'}" @click="emailEditorEvent = 'booking_rescheduled'">Módosítás</button>
+              <button type="button" :class="{active: emailEditorEvent === 'booking_cancelled'}" @click="emailEditorEvent = 'booking_cancelled'">Lemondás</button>
+            </div>
+          </div>
+
+          <div class="email-template-editor">
+            <label>Email tárgya
+              <input v-model.trim="currentEmailTemplate.subject" maxlength="255" />
+            </label>
+            <label>Bevezető szöveg
+              <textarea v-model.trim="currentEmailTemplate.intro" rows="4" maxlength="1500"></textarea>
+            </label>
+          </div>
+
+          <div class="email-live-preview">
+            <div class="email-preview-header">
+              <span>{{ emailEventLabel(emailEditorEvent) }}</span>
+              <strong>{{ business.name || 'Az Ön Vállalkozása' }}</strong>
+            </div>
+            <div class="email-preview-body">
+              <small>Tárgy</small>
+              <h3>{{ renderEmailTemplatePreview(currentEmailTemplate.subject) }}</h3>
+              <p>{{ renderEmailTemplatePreview(currentEmailTemplate.intro) }}</p>
+              <dl>
+                <div><dt>Szolgáltatás</dt><dd>Konzultáció</dd></div>
+                <div><dt>Dátum</dt><dd>2026. 07. 18.</dd></div>
+                <div><dt>Időpont</dt><dd>10:00–10:45</dd></div>
+                <div><dt>Vendég</dt><dd>Kovács Anna</dd></div>
+              </dl>
+              <button class="email-preview-button" type="button" disabled>Foglalás kezelése</button>
+              <p v-if="emailSettings.footer_text" class="email-preview-footer">{{ emailSettings.footer_text }}</p>
+            </div>
+          </div>
+        </section>
+      </section>
+
       <section v-if="activeTab === 'website'" class="website-admin-section">
         <section class="panel website-settings-panel">
           <div class="section-title">
@@ -372,6 +734,52 @@
         </div>
       </section>
     </main>
+
+    <transition name="modal-pop">
+      <div v-if="emailLogModalOpen && selectedEmailLog" class="modal-backdrop" @click.self="closeEmailLogModal">
+        <section class="modal-dialog email-log-detail-modal" role="dialog" aria-modal="true" aria-labelledby="emailLogModalTitle">
+          <div class="modal-head">
+            <div>
+              <p class="eyebrow">Email részletei</p>
+              <h2 id="emailLogModalTitle">{{ emailEventLabel(selectedEmailLog.event_type) }}</h2>
+            </div>
+            <button class="modal-close" type="button" aria-label="Bezárás" @click="closeEmailLogModal">×</button>
+          </div>
+
+          <div class="email-detail-hero" :class="selectedEmailLog.status">
+            <div>
+              <span class="detail-label">Címzett</span>
+              <strong>{{ selectedEmailLog.recipient_email }}</strong>
+              <small>{{ emailRecipientLabel(selectedEmailLog.recipient_type) }}</small>
+            </div>
+            <span class="email-status-badge" :class="selectedEmailLog.status">{{ emailStatusLabel(selectedEmailLog.status) }}</span>
+          </div>
+
+          <dl class="booking-detail-grid email-detail-grid">
+            <div><dt>Küldési idő</dt><dd>{{ formatDateTime(selectedEmailLog.sent_at || selectedEmailLog.created_at) }}</dd></div>
+            <div><dt>Esemény</dt><dd>{{ emailEventLabel(selectedEmailLog.event_type) }}</dd></div>
+            <div class="full"><dt>Tárgy</dt><dd>{{ selectedEmailLog.subject }}</dd></div>
+            <div v-if="selectedEmailLog.booking"><dt>Vendég</dt><dd>{{ selectedEmailLog.booking.customer_name }}</dd></div>
+            <div v-if="selectedEmailLog.booking"><dt>Szolgáltatás</dt><dd>{{ selectedEmailLog.booking.service_name }}</dd></div>
+            <div v-if="selectedEmailLog.booking"><dt>Dátum</dt><dd>{{ formatDateLong(selectedEmailLog.booking.date) }}</dd></div>
+            <div v-if="selectedEmailLog.booking"><dt>Időpont</dt><dd>{{ shortTime(selectedEmailLog.booking.start_time) }}–{{ shortTime(selectedEmailLog.booking.end_time) }}</dd></div>
+            <div v-if="selectedEmailLog.resent_from_id" class="full"><dt>Újraküldés forrása</dt><dd>#{{ selectedEmailLog.resent_from_id }} naplóbejegyzés</dd></div>
+          </dl>
+
+          <div v-if="selectedEmailLog.status === 'failed'" class="email-error-box">
+            <strong>Hibaüzenet</strong>
+            <pre>{{ selectedEmailLog.error_message || 'Ismeretlen emailküldési hiba.' }}</pre>
+          </div>
+
+          <div class="modal-actions">
+            <button class="button" type="button" @click="closeEmailLogModal">Bezárás</button>
+            <button class="button primary" type="button" :disabled="resendingEmailLogId === selectedEmailLog.id" @click="resendEmail(selectedEmailLog)">
+              {{ resendingEmailLogId === selectedEmailLog.id ? 'Újraküldés…' : 'Email újraküldése' }}
+            </button>
+          </div>
+        </section>
+      </div>
+    </transition>
 
     <transition name="modal-pop">
       <div v-if="bookingModalOpen && selectedBooking" class="modal-backdrop" @click.self="closeBookingModal">

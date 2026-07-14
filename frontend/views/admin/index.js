@@ -10,6 +10,36 @@ const STATUS_LABELS = {
 
 const HOUR_HEIGHT = 64;
 
+const EMAIL_EVENT_LABELS = {
+  booking_created: 'Új foglalás',
+  booking_rescheduled: 'Módosítás',
+  booking_cancelled: 'Lemondás',
+  email_test: 'Teszt email'
+};
+
+const EMAIL_RECIPIENT_LABELS = {
+  customer: 'Ügyfél',
+  admin: 'Admin'
+};
+
+const createEmptyEmailSettings = () => ({
+  sender_name: '',
+  reply_to: '',
+  footer_text: '',
+  templates: {
+    customer: {
+      booking_created: { subject: '', intro: '' },
+      booking_rescheduled: { subject: '', intro: '' },
+      booking_cancelled: { subject: '', intro: '' }
+    },
+    admin: {
+      booking_created: { subject: '', intro: '' },
+      booking_rescheduled: { subject: '', intro: '' },
+      booking_cancelled: { subject: '', intro: '' }
+    }
+  }
+});
+
 createApp({
   data() {
     return {
@@ -35,6 +65,42 @@ createApp({
       services: [],
       reviews: [],
       faqs: [],
+      emailLogs: [],
+      emailStats: {},
+      emailSystem: {},
+      emailSettings: createEmptyEmailSettings(),
+      emailDefaultSettings: createEmptyEmailSettings(),
+      emailFilters: {
+        status: '',
+        event_type: '',
+        recipient_type: '',
+        q: ''
+      },
+      emailPagination: {
+        current_page: 1,
+        last_page: 1,
+        per_page: 10,
+        total: 0,
+        from: 0,
+        to: 0,
+        has_more_pages: false
+      },
+      emailPageSizeOptions: [
+        10,
+        20,
+        50,
+        100
+      ],
+      emailLoading: false,
+      emailLoading: false,
+      savingEmailSettings: false,
+      sendingTestEmail: false,
+      resendingEmailLogId: null,
+      emailLogModalOpen: false,
+      selectedEmailLog: null,
+      emailEditorRecipient: 'customer',
+      emailEditorEvent: 'booking_created',
+      testEmail: { recipient_email: '', recipient_type: 'customer', event_type: 'booking_created' },
       activeTab: 'calendar',
       calendarDate: todayKey(),
       calendarMode: 'month',
@@ -215,6 +281,17 @@ createApp({
         : 'A megjegyzés legalább 3, legfeljebb 800 karakter legyen.';
     },
 
+    currentEmailTemplate() {
+      return this.emailSettings.templates?.[this.emailEditorRecipient]?.[this.emailEditorEvent]
+        || { subject: '', intro: '' };
+    },
+
+    testEmailValid() {
+      return isEmail(this.testEmail.recipient_email)
+        && ['customer', 'admin'].includes(this.testEmail.recipient_type)
+        && ['booking_created', 'booking_rescheduled', 'booking_cancelled'].includes(this.testEmail.event_type);
+    },
+
     blockGroups() {
       const sorted = [...this.blockedTimes].sort((a, b) => {
         const dateCompare = String(a.date).localeCompare(String(b.date));
@@ -246,7 +323,52 @@ createApp({
       }
 
       return groups;
-    }
+    },
+
+    emailPaginationPages() {
+      const current = Number(
+        this.emailPagination.current_page || 1
+      );
+
+      const last = Number(
+        this.emailPagination.last_page || 1
+      );
+
+      if (last <= 7) {
+        return Array.from(
+          { length: last },
+          (_, index) => index + 1
+        );
+      }
+
+      const pages = [1];
+
+      const start = Math.max(
+        2,
+        current - 2
+      );
+
+      const end = Math.min(
+        last - 1,
+        current + 2
+      );
+
+      if (start > 2) {
+        pages.push('ellipsis-left');
+      }
+
+      for (let page = start; page <= end; page += 1) {
+        pages.push(page);
+      }
+
+      if (end < last - 1) {
+        pages.push('ellipsis-right');
+      }
+
+      pages.push(last);
+
+      return pages;
+    },
   },
 
   async mounted() {
@@ -269,9 +391,34 @@ createApp({
 
   methods: {
     statusLabel(status) { return STATUS_LABELS[status] || status; },
+    emailEventLabel(eventType) { return EMAIL_EVENT_LABELS[eventType] || eventType; },
+    emailRecipientLabel(recipientType) { return EMAIL_RECIPIENT_LABELS[recipientType] || recipientType; },
+    emailStatusLabel(status) { return status === 'sent' ? 'Sikeres' : status === 'failed' ? 'Sikertelen' : status; },
     price(service) { return formatPrice(service.price_cents); },
     shortTime(value) { return String(value || '').slice(0, 5); },
     formatDateLong,
+
+    formatDateTime(value) {
+      if (!value) return '–';
+      const date = new Date(String(value).replace(' ', 'T'));
+      if (Number.isNaN(date.getTime())) return String(value);
+      return new Intl.DateTimeFormat('hu-HU', {
+        year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+      }).format(date);
+    },
+
+    renderEmailTemplatePreview(value) {
+      const replacements = {
+        '{business_name}': this.business.name || 'Az Ön Vállalkozása',
+        '{customer_name}': 'Kovács Anna',
+        '{customer_email}': 'anna@example.com',
+        '{service_name}': 'Konzultáció',
+        '{date}': '2026. 07. 18.',
+        '{time}': '10:00–10:45',
+        '{manage_url}': '/manage?token=MINTA'
+      };
+      return Object.entries(replacements).reduce((text, [key, replacement]) => String(text || '').split(key).join(replacement), String(value || ''));
+    },
 
     monogram(name) {
       return String(name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toLocaleUpperCase('hu-HU') || '').join('');
@@ -305,7 +452,7 @@ createApp({
     },
 
     syncModalBodyLock() {
-      const open = this.bookingModalOpen || this.manualModalOpen || this.serviceModalOpen || this.reviewModalOpen || this.faqModalOpen;
+      const open = this.bookingModalOpen || this.manualModalOpen || this.serviceModalOpen || this.reviewModalOpen || this.faqModalOpen || this.emailLogModalOpen;
       document.body.classList.toggle('modal-open', open);
     },
 
@@ -316,6 +463,7 @@ createApp({
       else if (this.serviceModalOpen) this.closeServiceModal();
       else if (this.reviewModalOpen) this.closeReviewModal();
       else if (this.faqModalOpen) this.closeFaqModal();
+      else if (this.emailLogModalOpen) this.closeEmailLogModal();
     },
 
     async login() {
@@ -342,6 +490,13 @@ createApp({
       this.services = [];
       this.reviews = [];
       this.faqs = [];
+      this.emailLogs = [];
+      this.emailStats = {};
+      this.emailSystem = {};
+      this.emailSettings = createEmptyEmailSettings();
+      this.emailDefaultSettings = createEmptyEmailSettings();
+      this.selectedEmailLog = null;
+      this.emailLogModalOpen = false;
       this.bookingModalOpen = false;
       this.manualModalOpen = false;
       this.serviceModalOpen = false;
@@ -642,6 +797,247 @@ createApp({
         this.toasts.error(`Nem sikerült kézzel foglalni: ${error.message}`);
       } finally {
         this.savingManual = false;
+      }
+    },
+
+    async openEmailTab() {
+      this.activeTab = 'email';
+      await this.loadEmailCenter();
+    },
+
+    emailLogQuery() {
+      const params = new URLSearchParams({
+        page: String(
+          this.emailPagination.current_page || 1
+        ),
+
+        per_page: String(
+          this.emailPagination.per_page || 10
+        )
+      });
+
+      for (const [key, value] of Object.entries(this.emailFilters)) {
+        if (String(value || '').trim() !== '') {
+          params.set(
+            key,
+            String(value).trim()
+          );
+        }
+      }
+
+      return params.toString();
+    },
+
+    async loadEmailCenter() {
+      if (!this.token) return;
+      this.emailLoading = true;
+      try {
+        const [logsResponse, settingsResponse] = await Promise.all([
+          api(`/admin/businesses/${window.App.config.businessId}/email-logs?${this.emailLogQuery()}`, { token: this.token }),
+          api(`/admin/businesses/${window.App.config.businessId}/email-settings`, { token: this.token })
+        ]);
+
+        this.emailLogs = logsResponse.data || [];
+        this.emailPagination = {
+          ...this.emailPagination,
+          ...(logsResponse.pagination || {})
+        };
+        this.emailStats = logsResponse.stats || {};
+        this.emailSystem = settingsResponse.system || logsResponse.system || {};
+        this.emailSettings = settingsResponse.data || createEmptyEmailSettings();
+        this.emailDefaultSettings = settingsResponse.defaults || createEmptyEmailSettings();
+
+        if (!this.testEmail.recipient_email) {
+          this.testEmail.recipient_email = this.business.email || this.emailSystem.from_address || '';
+        }
+      } catch (error) {
+        this.toasts.error(`Az email központ nem tölthető be: ${error.message}`);
+      } finally {
+        this.emailLoading = false;
+      }
+    },
+
+    async loadEmailLogs(options = {}) {
+      if (!this.token) return;
+
+      const {
+        resetPage = false,
+        scrollToTop = false
+      } = options;
+
+      if (resetPage) {
+        this.emailPagination.current_page = 1;
+      }
+
+      this.emailLoading = true;
+
+      try {
+        const response = await api(
+          `/admin/businesses/${window.App.config.businessId}/email-logs?${this.emailLogQuery()}`,
+          {
+            token: this.token
+          }
+        );
+
+        this.emailLogs = response.data || [];
+
+        this.emailPagination = {
+          ...this.emailPagination,
+          ...(response.pagination || {})
+        };
+
+        this.emailStats = response.stats || {};
+
+        this.emailSystem =
+          response.system
+          || this.emailSystem;
+
+        if (scrollToTop) {
+          this.$nextTick(() => {
+            this.$refs.emailLogPanel?.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start'
+            });
+          });
+        }
+
+      } catch (error) {
+        this.toasts.error(
+          `Az email napló nem tölthető be: ${error.message}`
+        );
+      } finally {
+        this.emailLoading = false;
+      }
+    },
+
+    async changeEmailPageSize() {
+      this.emailPagination.current_page = 1;
+
+      await this.loadEmailLogs();
+    },
+
+    async goToEmailPage(page) {
+      const targetPage = Number(page);
+
+      const currentPage = Number(
+        this.emailPagination.current_page || 1
+      );
+
+      const lastPage = Number(
+        this.emailPagination.last_page || 1
+      );
+
+      if (
+        !Number.isInteger(targetPage)
+        || targetPage < 1
+        || targetPage > lastPage
+        || targetPage === currentPage
+      ) {
+        return;
+      }
+
+      this.emailPagination.current_page = targetPage;
+
+      await this.loadEmailLogs({
+        scrollToTop: true
+      });
+    },
+
+    resetEmailFilters() {
+      this.emailFilters = {
+        status: '',
+        event_type: '',
+        recipient_type: '',
+        q: ''
+      };
+
+      this.emailPagination.current_page = 1;
+
+      this.loadEmailLogs();
+    },
+
+    async saveEmailSettings() {
+      if (this.savingEmailSettings) return;
+      this.savingEmailSettings = true;
+      try {
+        const response = await api(`/admin/businesses/${window.App.config.businessId}/email-settings`, {
+          method: 'PATCH',
+          token: this.token,
+          body: JSON.stringify(this.emailSettings)
+        });
+        this.emailSettings = response.data || this.emailSettings;
+        this.toasts.success('Email beállítások elmentve. A következő levelek már ezeket használják.');
+      } catch (error) {
+        this.toasts.error(`Az email beállítások mentése sikertelen: ${error.message}`);
+      } finally {
+        this.savingEmailSettings = false;
+      }
+    },
+
+    resetEmailSettingsToDefaults() {
+      if (!confirm('Visszaállítod az email szövegeket az alapértelmezett értékekre? A módosítás csak mentés után lesz végleges.')) return;
+      this.emailSettings = JSON.parse(JSON.stringify(this.emailDefaultSettings || createEmptyEmailSettings()));
+      this.toasts.success('Az alapértékek betöltve. A véglegesítéshez nyomd meg a Mentés gombot.');
+    },
+
+    async sendTestEmail() {
+      if (!this.testEmailValid || this.sendingTestEmail) return;
+      this.sendingTestEmail = true;
+      try {
+        const response = await api(`/admin/businesses/${window.App.config.businessId}/email-test`, {
+          method: 'POST',
+          token: this.token,
+          body: JSON.stringify(this.testEmail)
+        });
+        const log = response.data || {};
+        if (log.status === 'sent') this.toasts.success('Teszt email elküldve. Nézd meg a postaládát és a spam mappát is.');
+        else this.toasts.error(`A teszt email sikertelen: ${log.error_message || response.message || 'ismeretlen hiba'}`);
+        await this.loadEmailLogs({
+          resetPage: true
+        });
+      } catch (error) {
+        this.toasts.error(`A teszt email küldése sikertelen: ${error.message}`);
+      } finally {
+        this.sendingTestEmail = false;
+      }
+    },
+
+    openEmailLog(log) {
+      this.selectedEmailLog = log;
+      this.emailLogModalOpen = true;
+      this.syncModalBodyLock();
+    },
+
+    closeEmailLogModal() {
+      if (this.resendingEmailLogId) return;
+      this.emailLogModalOpen = false;
+      this.selectedEmailLog = null;
+      this.syncModalBodyLock();
+    },
+
+    async resendEmail(log) {
+      if (!log?.id || this.resendingEmailLogId) return;
+      if (!confirm(`Újraküldöd ezt az emailt a következő címre?\n${log.recipient_email}`)) return;
+
+      this.resendingEmailLogId = log.id;
+      try {
+        const response = await api(`/admin/email-logs/${log.id}/resend`, {
+          method: 'POST',
+          token: this.token
+        });
+        const newLog = response.data || {};
+        if (newLog.status === 'sent') this.toasts.success('Email újraküldve.');
+        else this.toasts.error(`Az újraküldés sikertelen: ${newLog.error_message || response.message || 'ismeretlen hiba'}`);
+        this.emailLogModalOpen = false;
+        this.selectedEmailLog = null;
+        this.syncModalBodyLock();
+        await this.loadEmailLogs({
+          resetPage: true
+        });
+      } catch (error) {
+        this.toasts.error(`Az email újraküldése sikertelen: ${error.message}`);
+      } finally {
+        this.resendingEmailLogId = null;
       }
     },
 
