@@ -1,0 +1,64 @@
+# Environment and credentials
+.env
+.env.*
+!.env.example
+!.env.testing.example
+backend/.env
+backend/.env.*
+!backend/.env.example
+!backend/.env.testing.example
+backend/auth.json
+
+# Dependencies and generated tooling state
+backend/vendor/
+backend/.phpunit.cache/
+composer.phar
+
+# Laravel runtime files
+backend/bootstrap/cache/*
+!backend/bootstrap/cache/.gitkeep
+backend/storage/framework/cache/*
+!backend/storage/framework/cache/.gitkeep
+!backend/storage/framework/cache/data/
+backend/storage/framework/cache/data/*
+!backend/storage/framework/cache/data/.gitkeep
+backend/storage/framework/sessions/*
+!backend/storage/framework/sessions/.gitkeep
+backend/storage/framework/views/*
+!backend/storage/framework/views/.gitkeep
+backend/storage/logs/*
+!backend/storage/logs/.gitkeep
+
+# Uploaded media is runtime data, not source code
+backend/storage/app/public/businesses/*
+!backend/storage/app/public/businesses/.gitkeep
+backend/storage/app/public/services/*
+!backend/storage/app/public/services/.gitkeep
+uploads/*
+!uploads/businesses/
+!uploads/services/
+uploads/businesses/*
+!uploads/businesses/.gitkeep
+uploads/services/*
+!uploads/services/.gitkeep
+
+# Database exports and local databases; migrations are the source of truth
+*.sql
+!backend/database/schema_mysql.sql
+*.sqlite
+*.sqlite3
+*.dump
+*.bak
+
+# Local archives and scan reports
+*.zip
+gitleaks-report.json
+gitleaks-report.sarif
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo

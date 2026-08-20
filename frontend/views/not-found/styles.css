@@ -1,0 +1,21 @@
+.not-found-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 28px;
+}
+
+.not-found-card {
+  width: min(560px, 100%);
+  text-align: center;
+  padding: 48px 34px;
+}
+
+.not-found-card h1 {
+  margin: 8px 0 12px;
+}
+
+.not-found-card .lead {
+  margin: 0 auto 24px;
+  max-width: 430px;
+}

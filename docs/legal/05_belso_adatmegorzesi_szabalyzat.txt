@@ -1,0 +1,57 @@
+BELSŐ ADATMEGŐRZÉSI ÉS TÖRLÉSI SZABÁLYZAT – RÖVID MINTA
+(Ez nem feltétlenül publikus oldal; belső üzemeltetési dokumentum.)
+
+1. Cél
+
+A szabályzat célja annak rögzítése, hogy az online időpontfoglaló rendszerben kezelt személyes adatokat milyen időpontban és milyen módon kell törölni, anonimizálni vagy lejáratni.
+
+2. Foglalási adatok
+
+Beállított idő: [FOGLALÁSI ADATOK, pl. 730 nap a foglalás dátuma után].
+
+A határidő letelte után:
+- ügyfélnév -> „Törölt ügyfél”;
+- ügyfél e-mail -> technikai anonim cím;
+- ügyfél megjegyzés -> törlés;
+- manage token -> lecserélés;
+- manage token lejárata -> múltbeli időpont;
+- anonymized_at -> rögzítés.
+
+A szolgáltatás, időpont és státusz személyhez nem köthető statisztikai/adatminőségi célból megmaradhat.
+
+3. E-mail naplók
+
+Beállított idő: [EMAIL LOG, pl. 180 nap].
+
+A határidő letelte után az e-mail napló rekordok automatikusan törlésre kerülnek.
+
+Ha a foglalást korábban manuálisan anonimizálják:
+- e-mail payload -> törlés;
+- címzett e-mail -> technikai anonim cím.
+
+4. Manage token
+
+Beállított idő: [TOKEN, pl. 30 nap a foglalás dátuma után].
+
+A határidő letelte után a token lejár, és a foglalás a korábbi kezelőlinken keresztül nem módosítható.
+
+5. Manuális törlési / anonimizálási kérelem
+
+Érintetti törlési kérelem esetén:
+- ellenőrizni kell a kérelmező személyazonosságát megfelelő, arányos módon;
+- meg kell vizsgálni, van-e jogszabályi vagy jogi igényből eredő megőrzési kötelezettség;
+- ha nincs akadály, a személyes adatokat anonimizálni vagy törölni kell;
+- az intézkedést dokumentálni kell.
+
+6. Biztonsági mentések
+
+Ha a rendszer biztonsági mentéseket készít, a backup retention külön szabályozandó:
+[PL. napi backup 30 napig].
+
+A törölt személyes adatokat normál működés során nem szabad biztonsági mentésből visszaállítani. Katasztrófa-helyreállítás esetén a visszaállított adatbázison a retention folyamatot ismételten le kell futtatni.
+
+7. Felelős
+
+Adatmegőrzési folyamatért felelős: [NÉV / SZEREPKÖR]
+Automatikus purge ellenőrzésének gyakorisága: [PL. HAVONTA]
+Utolsó felülvizsgálat: [DÁTUM]

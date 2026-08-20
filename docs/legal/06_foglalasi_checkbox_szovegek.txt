@@ -1,0 +1,22 @@
+FOGLALÁSI ŰRLAP – AJÁNLOTT JOGI SZÖVEGEK
+
+1. Kötelező checkbox a foglalás elküldése előtt
+
+[ ] Elolvastam és elfogadom a Felhasználási és foglalási feltételeket, valamint tudomásul vettem az Adatkezelési tájékoztatóban foglaltakat.
+
+A „Felhasználási és foglalási feltételek” és az „Adatkezelési tájékoztató” szövegrészek legyenek kattintható linkek.
+
+Fontos:
+Az adatkezelési tájékoztató tudomásulvétele nem ugyanaz, mint az adatkezelési hozzájárulás. A foglalás kezelésének fő jogalapja tipikusan nem hozzájárulás, hanem a szerződéskötést megelőző lépések / szerződés teljesítése.
+
+2. Opcionális, csak ha a konkrét szolgáltatásnál jogilag szükséges és a szolgáltatás 14 napon belül megkezdődhet
+
+[ ] Kifejezetten kérem, hogy a szolgáltatás teljesítése a fogyasztót megillető 14 napos elállási/felmondási határidő lejárta előtt megkezdődjön, és tudomásul veszem, hogy a szolgáltatás teljes körű teljesítését követően a jogszabályban meghatározott feltételek fennállása esetén az elállási/felmondási jogomat elveszíthetem.
+
+Ezt a checkboxot ne kapcsold be automatikusan minden vállalkozásnál. A konkrét szolgáltatás és szerződéskötési folyamat alapján jogi ellenőrzés szükséges.
+
+3. Marketing hozzájárulás – csak akkor, ha később hírlevelet/reklámot vezetsz be
+
+[ ] Hozzájárulok ahhoz, hogy a Szolgáltató marketing célú e-maileket küldjön számomra. A hozzájárulás bármikor visszavonható.
+
+Ez mindig külön, opcionális és alapértelmezetten üres checkbox legyen. A foglalás nem tehető a marketing hozzájárulás megadásától függővé.

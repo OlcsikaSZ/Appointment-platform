@@ -1,0 +1,41 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+
+const read = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
+const mainHtml = read('../views/main/index.php');
+const mainJs = read('../views/main/index.js');
+const accountJs = read('../views/account/index.js');
+const adminHtml = read('../views/admin/index.php');
+const adminCss = read('../views/admin/styles.css');
+const accountHtml = read('../views/account/index.php');
+const legalHtml = read('../views/legal/index.php');
+const manageHtml = read('../views/manage/index.php');
+const manageJs = read('../views/manage/index.js');
+const manageCss = read('../views/manage/styles.css');
+
+assert.match(mainHtml, /\?return=booking/);
+assert.doesNotMatch(mainHtml, /route_url\('account'\)[^>]+target="_blank"/);
+assert.match(mainJs, /BOOKING_RETURN_STATE_KEY/);
+assert.match(mainJs, /restoreBookingReturnState/);
+assert.match(accountJs, /returnToBooking/);
+assert.match(accountJs, /redirectToBooking/);
+assert.match(mainHtml, /mobile-account-button/);
+assert.match(mainHtml, /public-own-bookings/);
+assert.match(mainJs, /ownBookingsByDate/);
+assert.match(mainJs, /MANAGE_RETURN_STATE_KEY/);
+assert.match(mainJs, /openOwnBooking/);
+assert.match(mainHtml, /public-own-booking-event/);
+assert.match(adminHtml, /registered-account-badge/);
+assert.match(adminHtml, /legal-rich-editor/);
+assert.doesNotMatch(adminHtml, /legal-rich-editor[^>]+v-html=/);
+assert.match(adminHtml, /rememberLegalSelection/);
+assert.match(adminCss, /\.media-action-row \.button \{ width:100%; min-width:0; height:42px/);
+assert.match(accountHtml, /business\.logoThumbnailUrl \|\| business\.logoUrl/);
+assert.match(legalHtml, /business\.logoThumbnailUrl \|\| business\.logoUrl/);
+assert.match(manageHtml, /fromBooking/);
+assert.match(manageHtml, /business\.logoThumbnailUrl \|\| business\.logoUrl/);
+assert.match(manageJs, /response\.business\?\.logoUrl/);
+assert.match(adminCss, /\.calendar-actions[^}]+justify-content:center/);
+assert.match(manageCss, /\.manage-month-day\.current-booking::after[^}]+font-size:7\.5px/);
+
+console.log('Follow-up booking/account/admin UI smoke: PASS');

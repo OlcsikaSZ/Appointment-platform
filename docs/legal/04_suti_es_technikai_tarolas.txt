@@ -1,0 +1,44 @@
+SÜTI- ÉS TECHNIKAI TÁROLÁSI TÁJÉKOZTATÓ
+Hatályos: [DÁTUM]
+
+1. Általános tájékoztatás
+
+A weboldal és az online időpontfoglaló rendszer működéséhez technikai tárolási megoldások – például cookie-k, munkamenet-azonosítók vagy böngészői helyi tárhely (localStorage) – használata válhat szükségessé.
+
+A jelen rendszer alapverziójának célja, hogy csak a működéshez és biztonsághoz szükséges technikai tárolást alkalmazza.
+
+2. A rendszerben használt technikai tárolás
+
+Adminisztrációs felület:
+Az adminfelület a bejelentkezési állapot kezeléséhez böngészői helyi tárhelyet használhat, például:
+- admin hitelesítési token;
+- a vállalkozás technikai azonosítója;
+- az utolsó felhasználói aktivitás ideje.
+
+Ezek célja kizárólag a biztonságos adminisztrációs munkamenet fenntartása és az automatikus kijelentkeztetés támogatása.
+
+Nyilvános foglalási oldal:
+A nyilvános időpontfoglaló alapverziója nem alkalmaz marketing- vagy viselkedésalapú profilalkotó technológiát.
+
+3. Harmadik fél által elhelyezett sütik
+
+A jelen sablon alapverziója nem tartalmaz beépített Google Analytics, Meta Pixel vagy más marketing/analitikai követőkódot.
+
+Ha a Szolgáltató később ilyen szolgáltatást kapcsol be, jelen tájékoztatót frissíteni kell, és a szükséges hozzájárulás-kezelési mechanizmust is ki kell alakítani.
+
+4. Google Maps és külső linkek
+
+Ha a weboldal kizárólag külső Google Maps linket jelenít meg, a Google szolgáltatása csak a link megnyitása után válik közvetlenül érintetté.
+
+Ha a Szolgáltató később beágyazott Google Maps térképet, videót, közösségi modult vagy más külső tartalmat helyez el, az ilyen szolgáltatás további sütiket vagy technikai azonosítókat használhat. Ebben az esetben a tájékoztatót frissíteni kell.
+
+5. Böngészőbeállítások
+
+A felhasználó a böngésző beállításaiban kezelheti vagy törölheti a cookie-kat és egyéb helyi tárolási adatokat. Bizonyos szükséges technikai adatok törlése az adminfelületről való kijelentkezést vagy egyes funkciók működésének megszűnését eredményezheti.
+
+6. Kapcsolat
+
+A technikai tárolással kapcsolatos kérdések:
+[E-MAIL]
+
+Utolsó frissítés: [DÁTUM]

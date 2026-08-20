@@ -1,0 +1,13 @@
+[program:appointment-email-worker]
+process_name=%(program_name)s_%(process_num)02d
+command=php /var/www/appointment-platform/backend/artisan queue:work database --queue=emails,default --sleep=3 --tries=5 --timeout=90 --max-time=3600
+directory=/var/www/appointment-platform/backend
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+user=www-data
+numprocs=1
+redirect_stderr=true
+stdout_logfile=/var/log/supervisor/appointment-email-worker.log
+stopwaitsecs=100

@@ -1,0 +1,13 @@
+.legal-topbar { max-width: 960px; }
+.legal-shell { width: min(960px, calc(100% - 32px)); margin: 44px auto 80px; }
+.legal-card { padding: clamp(26px, 5vw, 56px); }
+.legal-card h1 { margin: 8px 0 26px; font-size: clamp(2rem, 5vw, 3.7rem); }
+.legal-content { overflow-wrap:anywhere; line-height:1.8; font-size:1rem; }
+.legal-content p,.legal-content div { margin:0 0 1em; }
+.legal-content h2,.legal-content h3 { margin:1.4em 0 .55em; }
+.legal-content ul,.legal-content ol { padding-left:1.5em; }
+.legal-empty { margin-top: 20px; }
+@media (max-width: 640px) {
+  .legal-shell { width: min(100% - 20px, 960px); margin-top: 20px; }
+  .legal-card { padding: 24px 18px; }
+}
