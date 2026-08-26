@@ -1,5 +1,5 @@
 const { createApp, reactive } = Vue;
-const { api, todayKey, formatDateLong, isPersonName, isEmail, useToasts, PasswordInput } = window.App;
+const { api, todayKey, formatDateLong, isPersonName, isEmail, useToasts, setBusinessFavicon, PasswordInput } = window.App;
 const CUSTOMER_TOKEN_KEY = 'appointment_customer_token';
 const CUSTOMER_EXPIRES_KEY = 'appointment_customer_expires_at';
 const CUSTOMER_ACCOUNT_KEY = 'appointment_customer_account';
@@ -25,6 +25,15 @@ createApp({
   computed: {
     upcomingBookings() { const today = todayKey(); return this.bookings.filter((item) => item.status === 'booked' && item.date >= today).reverse(); },
     pastBookings() { const ids = new Set(this.upcomingBookings.map((item) => item.id)); return this.bookings.filter((item) => !ids.has(item.id)); }
+  },
+  watch: {
+    business: {
+      immediate: true,
+      deep: true,
+      handler(value) {
+        setBusinessFavicon(value);
+      }
+    }
   },
   async mounted() {
     window.addEventListener('keydown', this.handleDeleteDialogKeydown);

@@ -865,8 +865,150 @@ body.modal-open { overflow:hidden; }
   .tabs { gap: 6px; }
   .tabs button { padding: 8px 11px; font-size: 12px; }
   .month-day { min-height: 64px; }
-  .month-day-statuses { display:none; }
   .month-event strong { font-size: 7.5px; }
   .email-pagination-meta { gap: 8px; }
   .email-page-button { min-width: 30px; height: 30px; }
+}
+
+/* Mobil natív dátum-, hónap- és időmezők javítása */
+.calendar-filter-bar,
+.calendar-filter-bar > label,
+.native-date-input,
+.statistics-actions,
+.workday-row,
+.workday-row > label {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.calendar-filter-bar input,
+.calendar-filter-bar select,
+.native-date-input input,
+.workday-row input[type="time"],
+.statistics-actions input[type="month"] {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+.native-date-input {
+  position: relative;
+  width: 100%;
+}
+
+.native-date-input input.is-empty::-webkit-datetime-edit {
+  color: transparent;
+}
+
+.native-date-placeholder {
+  position: absolute;
+  top: 5px;
+  right: 44px;
+  bottom: 0;
+  left: 13px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* Admin havi naptár státuszai */
+.month-day-statuses {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  margin-bottom: 5px;
+}
+
+.month-availability {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  padding: 3px 4px;
+  border-radius: 7px;
+  font-size: 8px;
+  line-height: 1.1;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.statistics-actions input[type="month"] {
+  max-width: 100%;
+}
+
+@media (max-width: 760px) {
+  .month-day-statuses {
+    margin-bottom: 3px;
+  }
+
+  .month-availability {
+    width: 100%;
+    max-width: 100%;
+    padding: 2px 3px;
+    border-radius: 6px;
+    font-size: 7px;
+  }
+}
+
+@media (max-width: 520px) {
+  .schedule-panel {
+    padding: 18px 14px;
+  }
+
+  .workday-row {
+    min-width: 0;
+    overflow: hidden;
+    padding: 12px;
+  }
+
+  .workday-row > label {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .statistics-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .statistics-actions input,
+  .statistics-actions .button {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 390px) {
+  .month-availability {
+    width: 100%;
+    max-width: 100%;
+    padding: 2px;
+    font-size: 6.5px;
+  }
+}
+
+@media (max-width: 360px) {
+  .month-day-statuses {
+    display: block;
+  }
+
+  .month-availability {
+    font-size: 6px;
+  }
 }

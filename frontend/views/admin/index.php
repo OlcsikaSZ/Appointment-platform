@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Admin — Időpontfoglalás</title>
+  <link id="business-favicon" rel="icon" type="image/svg+xml" href="<?= asset('assets/favicon.svg') ?>" />
   <link rel="stylesheet" href="<?= asset('assets/styles.css') ?>" />
   <link rel="stylesheet" href="<?= view_asset('styles.css') ?>" />
 </head>
@@ -300,7 +301,23 @@
             </label>
             <label>
               <span>Pontos dátum</span>
-              <input v-model="calendarFilters.date" type="date" />
+
+              <div class="native-date-input">
+                <input
+                  v-model="calendarFilters.date"
+                  type="date"
+                  :class="{ 'is-empty': !calendarFilters.date }"
+                  aria-label="Pontos dátum, nem kötelező"
+                />
+
+                <span
+                  v-if="!calendarFilters.date"
+                  class="native-date-placeholder"
+                  aria-hidden="true"
+                >
+                  Válassz dátumot
+                </span>
+              </div>
             </label>
             <button v-if="activeCalendarFilterCount" class="button sm" type="button" @click="resetCalendarFilters">
               Szűrők törlése ({{ activeCalendarFilterCount }})
@@ -337,18 +354,30 @@
                 >
                   <header class="month-day-head">
                     <span class="month-day-number">{{ day.dayNumber }}</span>
-                    <span class="month-day-statuses">
-                      <span v-if="day.isToday" class="today-label">Ma</span>
-                      <span v-else-if="day.isPast" class="month-availability past-label">Elmúlt</span>
-                      <span
-                        v-else-if="day.availability"
-                        class="month-availability"
-                        :class="{ empty: day.isClosed || day.isSoldOut }"
-                      >
-                        {{ day.isClosed ? 'Zárva' : (day.isSoldOut ? 'Nincs szabad' : day.availability.available_count + ' szabad') }}
-                      </span>
-                    </span>
+                    <span v-if="day.isToday" class="today-label">Ma</span>
                   </header>
+
+                  <span class="month-day-statuses">
+                    <span
+                      v-if="day.isPast && !day.isToday"
+                      class="month-availability past-label"
+                    >
+                      Elmúlt
+                    </span>
+
+                    <span
+                      v-else-if="day.availability"
+                      class="month-availability"
+                      :class="{ empty: day.isClosed || day.isSoldOut }"
+                    >
+                      {{ day.isClosed
+                        ? 'Zárva'
+                        : (day.isSoldOut
+                            ? 'Nincs szabad'
+                            : day.availability.available_count + ' szabad')
+                      }}
+                    </span>
+                  </span>
 
                   <div class="month-day-events">
                     <template v-for="entry in calendarEntriesForDay(day.key).slice(0, 3)" :key="entry.key">

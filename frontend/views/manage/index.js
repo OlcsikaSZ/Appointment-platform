@@ -7,7 +7,8 @@ const {
   formatDateLong,
   calendarDownloadUrl,
   googleCalendarUrl,
-  useToasts
+  useToasts,
+  setBusinessFavicon
 } = window.App;
 
 const MANAGE_TOKEN_SESSION_KEY = 'appointment_manage_token';

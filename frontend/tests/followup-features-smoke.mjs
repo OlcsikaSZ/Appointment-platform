@@ -36,6 +36,6 @@ assert.match(manageHtml, /fromBooking/);
 assert.match(manageHtml, /business\.logoThumbnailUrl \|\| business\.logoUrl/);
 assert.match(manageJs, /response\.business\?\.logoUrl/);
 assert.match(adminCss, /\.calendar-actions[^}]+justify-content:center/);
-assert.match(manageCss, /\.manage-month-day\.current-booking::after[^}]+font-size:7\.5px/);
+assert.match(manageCss, /\.manage-month-day\.current-booking::after[^}]+width:100%[^}]+font-size:6\.5px/);
 
 console.log('Follow-up booking/account/admin UI smoke: PASS');

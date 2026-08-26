@@ -1,5 +1,5 @@
 const { createApp, reactive } = Vue;
-const { api, todayKey, addDaysKey, parseKey, formatDateLong, useToasts, servicePriceLabel, isPersonName, isEmail, isValidOptionalNote, PasswordInput } = window.App;
+const { api, todayKey, addDaysKey, parseKey, formatDateLong, useToasts, servicePriceLabel, isPersonName, isEmail, isValidOptionalNote, setBusinessFavicon, PasswordInput } = window.App;
 
 const STATUS_LABELS = {
   booked: 'Foglalva',
@@ -537,8 +537,18 @@ createApp({
   },
 
   watch: {
+    business: {
+      immediate: true,
+      deep: true,
+      handler(value) {
+        setBusinessFavicon(value);
+      }
+    },
+
     activeTab(next, previous) {
-      if (previous === 'calendar' && next !== 'calendar') this.resetCalendarFilters();
+      if (previous === 'calendar' && next !== 'calendar') {
+        this.resetCalendarFilters();
+      }
     }
   },
 

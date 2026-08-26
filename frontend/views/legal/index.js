@@ -1,5 +1,5 @@
 const { createApp, reactive } = Vue;
-const { api, useToasts } = window.App;
+const { api, useToasts, setBusinessFavicon} = window.App;
 
 createApp({
   data() {
@@ -17,6 +17,15 @@ createApp({
   computed: {
     content() {
       return String(this.business.legal?.[this.field] || '').trim();
+    }
+  },
+  watch: {
+    business: {
+      immediate: true,
+      deep: true,
+      handler(value) {
+        setBusinessFavicon(value);
+      }
     }
   },
   async mounted() {

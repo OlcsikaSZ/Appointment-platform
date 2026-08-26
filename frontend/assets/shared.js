@@ -454,6 +454,58 @@
     `
   };
 
+  function businessMonogram(business = {}) {
+    const configured = String(business.logoText || '')
+      .trim()
+      .replace(/[^\p{L}\p{N}]/gu, '')
+      .slice(0, 2);
+
+    if (configured) {
+      return configured.toLocaleUpperCase('hu-HU');
+    }
+
+    return String(business.name || '')
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part[0] || '')
+      .join('')
+      .replace(/[^\p{L}\p{N}]/gu, '')
+      .slice(0, 2)
+      .toLocaleUpperCase('hu-HU') || 'IP';
+  }
+
+  function setBusinessFavicon(business = {}) {
+    let favicon = document.getElementById('business-favicon');
+
+    if (!favicon) {
+      favicon = document.createElement('link');
+      favicon.id = 'business-favicon';
+      favicon.rel = 'icon';
+      document.head.appendChild(favicon);
+    }
+
+    const logoUrl = business.logoThumbnailUrl || business.logoUrl;
+
+    if (logoUrl) {
+      favicon.href = new URL(logoUrl, window.location.href).href;
+      favicon.type = 'image/webp';
+      return;
+    }
+
+    const initials = businessMonogram(business);
+
+    const svg =
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">` +
+      `<rect width="64" height="64" rx="16" fill="#1c2541"/>` +
+      `<text x="32" y="41" text-anchor="middle" font-family="Georgia,serif" ` +
+      `font-size="27" font-weight="700" fill="#fffdf9">${initials}</text>` +
+      `</svg>`;
+
+    favicon.href = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+    favicon.type = 'image/svg+xml';
+  }
+
   async function api(path, options = {}) {
     const { token, headers = {}, ...requestOptions } = options;
     const isFormData = typeof FormData !== 'undefined' && requestOptions.body instanceof FormData;
@@ -527,6 +579,7 @@
     downloadIcs,
     calendarDownloadUrl,
     googleCalendarUrl,
+    setBusinessFavicon,
     PasswordInput,
     useToasts,
     HU_DOW_SHORT

@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex,nofollow" /><title>Fiókom — Időpontfoglalás</title>
+  <link id="business-favicon" rel="icon" type="image/svg+xml" href="<?= asset('assets/favicon.svg') ?>" />
   <link rel="stylesheet" href="<?= asset('assets/styles.css') ?>" /><link rel="stylesheet" href="<?= view_asset('styles.css') ?>" />
 </head>
 <body>

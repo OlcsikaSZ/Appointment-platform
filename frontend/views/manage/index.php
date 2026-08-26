@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="referrer" content="no-referrer" />
   <title>Foglalás kezelése</title>
+  <link id="business-favicon" rel="icon" type="image/svg+xml" href="<?= asset('assets/favicon.svg') ?>" />
   <link rel="stylesheet" href="<?= asset('assets/styles.css') ?>" />
   <link rel="stylesheet" href="<?= view_asset('styles.css') ?>" />
 </head>

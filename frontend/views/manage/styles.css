@@ -146,3 +146,30 @@ body.modal-open { overflow:hidden; }
   .manage-month-day small { display:none; }
   .manage-quarter-slot strong { font-size: 8px; }
 }
+
+.manage-month-day.current-booking::after {
+  content: 'Jelenlegi';
+  align-self: stretch;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  margin-top: auto;
+  padding: 2px 1px;
+  border-radius: 5px;
+  background: #e6e9f5;
+  color: var(--ink);
+  font-size: 6.5px;
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: -.02em;
+  text-align: center;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+@media (max-width: 390px) {
+  .manage-month-day.current-booking::after {
+    font-size: 5.8px;
+  }
+}

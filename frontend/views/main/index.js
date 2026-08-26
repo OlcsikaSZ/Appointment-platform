@@ -13,7 +13,8 @@ const {
   isPersonName,
   isEmail,
   isValidOptionalNote,
-  useToasts
+  useToasts,
+  setBusinessFavicon
 } = window.App;
 const CUSTOMER_TOKEN_KEY = 'appointment_customer_token';
 const CUSTOMER_EXPIRES_KEY = 'appointment_customer_expires_at';
@@ -238,6 +239,16 @@ createApp({
 
     publicSlotMap() {
       return new Map(this.slots.map((slot) => [slot.time, slot]));
+    }
+  },
+
+  watch: {
+    business: {
+      immediate: true,
+      deep: true,
+      handler(value) {
+        setBusinessFavicon(value);
+      }
     }
   },
 
