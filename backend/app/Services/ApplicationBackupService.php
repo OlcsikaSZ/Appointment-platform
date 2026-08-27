@@ -51,6 +51,7 @@ class ApplicationBackupService
             $sqlPath = $temporaryDirectory.DIRECTORY_SEPARATOR.'database.sql';
             $compressedSqlPath = $sqlPath.'.gz';
             $this->dumpDatabase($connection, $database, $mysqlConfigFile, $sqlPath);
+            $this->normalizeSqlDumpForPortability($sqlPath);
             $this->compressDatabase($sqlPath);
 
             $media = $includeMedia
@@ -250,6 +251,51 @@ class ApplicationBackupService
         if (! $process->isSuccessful() || ! is_file($compressed) || filesize($compressed) === 0) {
             throw new RuntimeException('Az SQL mentés tömörítése sikertelen: '.trim($process->getErrorOutput()));
         }
+    }
+
+    private function normalizeSqlDumpForPortability(string $sqlPath): void
+    {
+        $source = fopen($sqlPath, 'rb');
+        if (! $source) {
+            throw new RuntimeException('Az SQL mentés nem nyitható meg kompatibilitási ellenőrzéshez.');
+        }
+
+        $temporaryPath = $sqlPath.'.portable';
+        $target = fopen($temporaryPath, 'wb');
+        if (! $target) {
+            fclose($source);
+            throw new RuntimeException('Nem hozható létre a hordozható SQL mentés ideiglenes fájlja.');
+        }
+
+        try {
+            $firstLine = fgets($source);
+            if ($firstLine === false) {
+                throw new RuntimeException('Az SQL mentés üres.');
+            }
+
+            // MariaDB 10.11+ mysqldump may prepend a sandbox-mode directive that
+            // older MariaDB/MySQL clients interpret as the unsupported "\-" command.
+            if (! str_contains($firstLine, 'enable the sandbox mode')) {
+                fwrite($target, $firstLine);
+            }
+
+            stream_copy_to_stream($source, $target);
+        } finally {
+            fclose($target);
+            fclose($source);
+        }
+
+        if (! is_file($temporaryPath) || filesize($temporaryPath) === 0) {
+            @unlink($temporaryPath);
+            throw new RuntimeException('A hordozható SQL mentés előállítása sikertelen.');
+        }
+
+        if (! @copy($temporaryPath, $sqlPath)) {
+            @unlink($temporaryPath);
+            throw new RuntimeException('A hordozható SQL mentés véglegesítése sikertelen.');
+        }
+
+        @unlink($temporaryPath);
     }
 
     private function createMysqlOptionFile(array $connection): string
