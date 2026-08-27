@@ -8,26 +8,52 @@ Komplett, reszponzív online időpontfoglaló rendszer Laravel API-val és build
 
 ## Tartalomjegyzék
 
-- [Mit old meg az alkalmazás?](#mit-old-meg-az-alkalmazás)
-- [Fő funkciók](#fő-funkciók)
-- [Felületek és útvonalak](#felületek-és-útvonalak)
-- [Architektúra](#architektúra)
-- [Technológiai stack](#technológiai-stack)
-- [Fontos műszaki döntések](#fontos-műszaki-döntések)
-- [Projektstruktúra](#projektstruktúra)
-- [Rendszerkövetelmények](#rendszerkövetelmények)
-- [Helyi telepítés XAMPP alatt](#helyi-telepítés-xampp-alatt)
-- [Környezeti konfiguráció](#környezeti-konfiguráció)
-- [Háttérfolyamatok](#háttérfolyamatok)
-- [Owner- és adminfiókok](#owner--és-adminfiókok)
-- [E-mail-rendszer](#e-mail-rendszer)
-- [Tesztelés](#tesztelés)
-- [Éles üzemeltetés](#éles-üzemeltetés)
-- [Biztonság és adatvédelem](#biztonság-és-adatvédelem)
-- [Mentés és visszaállítás](#mentés-és-visszaállítás)
-- [Ismert korlátok és lehetséges továbbfejlesztések](#ismert-korlátok-és-lehetséges-továbbfejlesztések)
-- [Bemutatás állásinterjún](#bemutatás-állásinterjún)
-- [Licenc és tulajdonjog](#licenc-és-tulajdonjog)
+- [Appointment Platform](#appointment-platform)
+  - [Tartalomjegyzék](#tartalomjegyzék)
+  - [Mit old meg az alkalmazás?](#mit-old-meg-az-alkalmazás)
+  - [Fő funkciók](#fő-funkciók)
+    - [Nyilvános foglalási oldal](#nyilvános-foglalási-oldal)
+    - [Foglaláskezelő oldal](#foglaláskezelő-oldal)
+    - [Opcionális ügyfélfiók](#opcionális-ügyfélfiók)
+    - [Admin- és ownerfelület](#admin--és-ownerfelület)
+    - [Adminfiók és biztonsági funkciók](#adminfiók-és-biztonsági-funkciók)
+  - [Felületek és útvonalak](#felületek-és-útvonalak)
+  - [Architektúra](#architektúra)
+  - [Technológiai stack](#technológiai-stack)
+  - [Fontos műszaki döntések](#fontos-műszaki-döntések)
+    - [Többrétegű ütközésvédelem](#többrétegű-ütközésvédelem)
+    - [Időzóna-tudatos foglalás](#időzóna-tudatos-foglalás)
+    - [Build nélküli Vue frontend](#build-nélküli-vue-frontend)
+    - [Aszinkron e-mail és ütemezett emlékeztető](#aszinkron-e-mail-és-ütemezett-emlékeztető)
+    - [Vendégfoglalás és opcionális fiók együtt](#vendégfoglalás-és-opcionális-fiók-együtt)
+  - [Projektstruktúra](#projektstruktúra)
+  - [Rendszerkövetelmények](#rendszerkövetelmények)
+  - [Helyi telepítés XAMPP alatt](#helyi-telepítés-xampp-alatt)
+    - [1. Projekt elhelyezése](#1-projekt-elhelyezése)
+    - [2. Apache és MySQL](#2-apache-és-mysql)
+    - [3. Backend telepítése](#3-backend-telepítése)
+    - [4. Megnyitás](#4-megnyitás)
+    - [5. Háttérfolyamatok](#5-háttérfolyamatok)
+  - [Környezeti konfiguráció](#környezeti-konfiguráció)
+    - [Legfontosabb változók](#legfontosabb-változók)
+  - [Háttérfolyamatok](#háttérfolyamatok)
+    - [Queue worker](#queue-worker)
+    - [Scheduler](#scheduler)
+  - [Owner- és adminfiókok](#owner--és-adminfiókok)
+    - [Éles owner létrehozása](#éles-owner-létrehozása)
+    - [Régi admin eltávolítása](#régi-admin-eltávolítása)
+    - [Fejlesztői seed](#fejlesztői-seed)
+  - [E-mail-rendszer](#e-mail-rendszer)
+  - [Tesztelés](#tesztelés)
+    - [Backend](#backend)
+    - [Frontend](#frontend)
+  - [Éles üzemeltetés](#éles-üzemeltetés)
+  - [Biztonság és adatvédelem](#biztonság-és-adatvédelem)
+    - [Megvalósított védelmek](#megvalósított-védelmek)
+    - [Fontos adatvédelmi megjegyzés](#fontos-adatvédelmi-megjegyzés)
+  - [Mentés és visszaállítás](#mentés-és-visszaállítás)
+  - [Ismert korlátok és lehetséges továbbfejlesztések](#ismert-korlátok-és-lehetséges-továbbfejlesztések)
+  - [Licenc és tulajdonjog](#licenc-és-tulajdonjog)
 
 ## Mit old meg az alkalmazás?
 
@@ -422,7 +448,7 @@ Az adminfelületen elérhető:
 
 ## Tesztelés
 
-A projekt jelenlegi forrása 13 Laravel Feature tesztfájlt, 55 backend tesztesetet és 8 Node.js frontend/RFC ellenőrzést tartalmaz.
+A projekt jelenlegi forrása 14 Laravel Feature tesztfájlt, 61 backend tesztesetet és 9 Node.js frontend/RFC ellenőrzést tartalmaz.
 
 ### Backend
 

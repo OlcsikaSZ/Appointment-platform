@@ -52,8 +52,25 @@ class BookingCoreTest extends TestCase
         ]);
 
         $booking = Booking::query()->where('business_id', $business->id)->firstOrFail();
+        $this->assertSame((int) $service->price_cents, (int) $booking->price_cents_snapshot);
+        $this->assertSame($service->price_mode, $booking->price_mode_snapshot);
         $this->assertNotNull($booking->legal_accepted_at);
         $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', (string) $booking->legal_text_hash);
+    }
+
+
+    public function test_public_booking_rate_limit_is_enforced(): void
+    {
+        $business = $this->createBusiness(['slug' => 'booking-rate-limit']);
+        $service = $this->createService($business);
+
+        for ($attempt = 1; $attempt <= 8; $attempt++) {
+            $this->postJson("/api/v1/businesses/{$business->slug}/bookings", [])
+                ->assertUnprocessable();
+        }
+
+        $this->postJson("/api/v1/businesses/{$business->slug}/bookings", [])
+            ->assertTooManyRequests();
     }
 
     public function test_public_booking_requires_legal_acceptance(): void

@@ -73,6 +73,8 @@ trait CreatesAppointmentData
             'business_id' => $business->id,
             'service_id' => $service->id,
             'service_name' => $service->name,
+            'price_cents_snapshot' => $service->price_cents,
+            'price_mode_snapshot' => $service->price_mode ?: 'fixed',
             'date' => '2026-08-10',
             'start_time' => '10:00',
             'end_time' => '11:00',

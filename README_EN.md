@@ -8,26 +8,50 @@ A complete, responsive online appointment booking system with a Laravel API and 
 
 ## Table of contents
 
-- [What problem does it solve?](#what-problem-does-it-solve)
-- [Core features](#core-features)
-- [Interfaces and routes](#interfaces-and-routes)
-- [Architecture](#architecture)
-- [Technology stack](#technology-stack)
-- [Important technical decisions](#important-technical-decisions)
-- [Project structure](#project-structure)
-- [System requirements](#system-requirements)
-- [Local installation with XAMPP](#local-installation-with-xampp)
-- [Environment configuration](#environment-configuration)
-- [Background processes](#background-processes)
-- [Owner and administrator accounts](#owner-and-administrator-accounts)
-- [E-mail system](#e-mail-system)
-- [Testing](#testing)
-- [Production operation](#production-operation)
-- [Security and privacy](#security-and-privacy)
-- [Backup and restore](#backup-and-restore)
-- [Known limitations and possible improvements](#known-limitations-and-possible-improvements)
-- [Presenting the project in an interview](#presenting-the-project-in-an-interview)
-- [License and ownership](#license-and-ownership)
+- [Appointment Platform](#appointment-platform)
+  - [Table of contents](#table-of-contents)
+  - [What problem does it solve?](#what-problem-does-it-solve)
+  - [Core features](#core-features)
+    - [Public booking page](#public-booking-page)
+    - [Booking management page](#booking-management-page)
+    - [Optional customer account](#optional-customer-account)
+    - [Administration and owner interface](#administration-and-owner-interface)
+    - [Account and security features](#account-and-security-features)
+  - [Interfaces and routes](#interfaces-and-routes)
+  - [Architecture](#architecture)
+  - [Technology stack](#technology-stack)
+  - [Important technical decisions](#important-technical-decisions)
+    - [Layered booking conflict protection](#layered-booking-conflict-protection)
+    - [Timezone-aware scheduling](#timezone-aware-scheduling)
+    - [Build-free Vue frontend](#build-free-vue-frontend)
+    - [Asynchronous e-mail and scheduled reminders](#asynchronous-e-mail-and-scheduled-reminders)
+    - [Guest booking and optional accounts](#guest-booking-and-optional-accounts)
+  - [Project structure](#project-structure)
+  - [System requirements](#system-requirements)
+  - [Local installation with XAMPP](#local-installation-with-xampp)
+    - [1. Place or clone the project](#1-place-or-clone-the-project)
+    - [2. Start Apache and MySQL](#2-start-apache-and-mysql)
+    - [3. Install the backend](#3-install-the-backend)
+    - [4. Open the application](#4-open-the-application)
+    - [5. Start background processes](#5-start-background-processes)
+  - [Environment configuration](#environment-configuration)
+    - [Key variables](#key-variables)
+  - [Background processes](#background-processes)
+    - [Queue worker](#queue-worker)
+    - [Scheduler](#scheduler)
+  - [Owner and administrator accounts](#owner-and-administrator-accounts)
+    - [Create a production owner](#create-a-production-owner)
+    - [Remove a legacy administrator](#remove-a-legacy-administrator)
+    - [Development seed](#development-seed)
+  - [E-mail system](#e-mail-system)
+  - [Testing](#testing)
+    - [Backend](#backend)
+    - [Frontend](#frontend)
+  - [Production operation](#production-operation)
+  - [Security and privacy](#security-and-privacy)
+  - [Backup and restore](#backup-and-restore)
+  - [Known limitations and possible improvements](#known-limitations-and-possible-improvements)
+  - [License and ownership](#license-and-ownership)
 
 ## What problem does it solve?
 
@@ -403,7 +427,7 @@ For reliable delivery from a production domain, configure SPF, DKIM, and DMARC i
 
 ## Testing
 
-The repository contains 13 Laravel feature-test files with 55 backend test cases, plus eight Node.js frontend/RFC test scripts.
+The repository contains 14 Laravel feature-test files with 61 backend test cases, plus nine Node.js frontend/RFC test scripts.
 
 ### Backend
 

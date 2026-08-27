@@ -20,6 +20,7 @@ DirectoryIndex frontend/index.php
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
+    RewriteRule ^up/?$ backend/public/index.php [END,QSA]
     RewriteRule ^api(?:/.*)?$ backend/public/index.php [END,QSA]
 
     # Régi, fizikailag a projekt /uploads mappájában lévő fájlok továbbra is kiszolgálhatók.

@@ -62,4 +62,20 @@ class AdminReportTest extends TestCase
         $this->assertStringContainsString('<mergeCell ref="A1:C1"/>', $secondSheet);
         $this->assertStringContainsString('horizontal="center" vertical="center"', $styles);
     }
+
+    public function test_statistics_keep_the_booking_time_price_after_service_price_changes(): void
+    {
+        $business = $this->createBusiness();
+        $service = $this->createService($business, ['price_cents' => 1000000, 'price_mode' => 'fixed']);
+        $admin = $this->createAdmin($business);
+        $this->createBooking($business, $service, ['status' => Booking::STATUS_COMPLETED]);
+
+        $service->update(['price_cents' => 2500000]);
+        Sanctum::actingAs($admin, ['admin']);
+
+        $this->getJson("/api/v1/admin/businesses/{$business->id}/statistics?month=2026-08")
+            ->assertOk()
+            ->assertJsonPath('data.estimated_revenue', 10000);
+    }
+
 }

@@ -50,7 +50,7 @@ class CustomerAuthController extends Controller
                 'password_hash' => Hash::make($validated['password']),
             ],
         );
-        Mail::to($email)->send(new CustomerVerificationCodeMail(
+        Mail::to($email)->queue(new CustomerVerificationCodeMail(
             $business, $code, CustomerVerificationCode::PURPOSE_REGISTRATION, $validMinutes,
         ));
 
@@ -134,7 +134,7 @@ class CustomerAuthController extends Controller
                 $code,
                 $validMinutes,
             );
-            Mail::to($email)->send(new CustomerVerificationCodeMail(
+            Mail::to($email)->queue(new CustomerVerificationCodeMail(
                 $business, $code, CustomerVerificationCode::PURPOSE_PASSWORD_RESET, $validMinutes,
             ));
         }

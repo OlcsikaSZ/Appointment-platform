@@ -29,6 +29,8 @@ class Booking extends Model
         'customer_account_id',
         'service_id',
         'service_name',
+        'price_cents_snapshot',
+        'price_mode_snapshot',
         'date',
         'start_time',
         'end_time',
@@ -87,6 +89,31 @@ class Booking extends Model
     public function service(): BelongsTo
     {
         return $this->belongsTo(Service::class);
+    }
+
+    public function reportPriceMode(): string
+    {
+        return (string) ($this->price_mode_snapshot ?: $this->service?->price_mode ?: 'fixed');
+    }
+
+    public function reportPriceCents(): ?int
+    {
+        $value = $this->price_cents_snapshot;
+
+        if ($value === null) {
+            $value = $this->service?->price_cents;
+        }
+
+        return $value === null ? null : (int) $value;
+    }
+
+    public function estimatedRevenueCents(): int
+    {
+        if ($this->reportPriceMode() !== 'fixed') {
+            return 0;
+        }
+
+        return (int) ($this->reportPriceCents() ?? 0);
     }
 
     public function emailLogs(): HasMany

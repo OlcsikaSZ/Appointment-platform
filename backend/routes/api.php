@@ -22,7 +22,8 @@ Route::prefix('v1')->group(function (): void {
     Route::get('/businesses/{business:slug}/slots', [PublicBookingController::class, 'slots']);
     Route::get('/businesses/{business:slug}/availability', [PublicBookingController::class, 'availability']);
     Route::get('/businesses/{business:slug}/availability-calendar', [PublicBookingController::class, 'availabilityCalendar']);
-    Route::post('/businesses/{business:slug}/bookings', [PublicBookingController::class, 'store']);
+    Route::post('/businesses/{business:slug}/bookings', [PublicBookingController::class, 'store'])
+        ->middleware('throttle:8,10');
     Route::post('/businesses/{business:slug}/reviews', [PublicReviewController::class, 'store'])
         ->middleware('throttle:3,10');
     Route::post('/businesses/{business:slug}/customer-auth/register', [CustomerAuthController::class, 'register'])
@@ -36,24 +37,28 @@ Route::prefix('v1')->group(function (): void {
     Route::post('/businesses/{business:slug}/customer-auth/password/reset', [CustomerAuthController::class, 'resetPassword'])
         ->middleware('throttle:10,1');
 
-    Route::get('/bookings/{booking:manage_token}', [PublicBookingController::class, 'show']);
-    Route::get('/bookings/{booking:manage_token}/calendar.ics', [PublicBookingController::class, 'calendar']);
+    Route::get('/bookings/{booking:manage_token}', [PublicBookingController::class, 'show'])
+        ->middleware('throttle:120,1');
+    Route::get('/bookings/{booking:manage_token}/calendar.ics', [PublicBookingController::class, 'calendar'])
+        ->middleware('throttle:30,1');
 
     Route::get(
         '/bookings/{booking:manage_token}/slots',
         [PublicBookingController::class, 'manageSlots']
-    );
+    )->middleware('throttle:120,1');
     Route::get(
         '/bookings/{booking:manage_token}/availability',
         [PublicBookingController::class, 'manageAvailability']
-    );
+    )->middleware('throttle:120,1');
     Route::get(
         '/bookings/{booking:manage_token}/availability-calendar',
         [PublicBookingController::class, 'manageAvailabilityCalendar']
-    );
+    )->middleware('throttle:120,1');
 
-    Route::post('/bookings/{booking:manage_token}/cancel', [PublicBookingController::class, 'cancel']);
-    Route::post('/bookings/{booking:manage_token}/reschedule', [PublicBookingController::class, 'reschedule']);
+    Route::post('/bookings/{booking:manage_token}/cancel', [PublicBookingController::class, 'cancel'])
+        ->middleware('throttle:6,10');
+    Route::post('/bookings/{booking:manage_token}/reschedule', [PublicBookingController::class, 'reschedule'])
+        ->middleware('throttle:6,10');
     Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
     Route::post('/auth/owner/activate', [AuthController::class, 'activateOwner'])->middleware('throttle:10,1');
     Route::post('/auth/owner/resend-verification', [AuthController::class, 'resendOwnerActivation'])->middleware('throttle:3,10');

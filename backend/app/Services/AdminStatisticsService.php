@@ -30,7 +30,7 @@ class AdminStatisticsService
 
     private function calculate(Business $business, CarbonImmutable $start, CarbonImmutable $end, bool $details = true): array
     {
-        $bookings = $business->bookings()->with('service:id,name,price_cents')
+        $bookings = $business->bookings()->with('service:id,name,price_cents,price_mode')
             ->whereBetween('date', [$start->toDateString(), $end->toDateString()])
             ->orderBy('date')->orderBy('start_time')->get();
         $total = $bookings->count();
@@ -38,7 +38,7 @@ class AdminStatisticsService
             fn (string $status) => [$status => $bookings->where('status', $status)->count()]
         )->all();
         $revenueBookings = $bookings->whereIn('status', [Booking::STATUS_BOOKED, Booking::STATUS_COMPLETED]);
-        $revenue = round($revenueBookings->sum(fn (Booking $booking) => ((int) ($booking->service?->price_cents ?? 0)) / 100), 2);
+        $revenue = round($revenueBookings->sum(fn (Booking $booking) => $booking->estimatedRevenueCents() / 100), 2);
         [$availableMinutes, $occupiedMinutes] = $this->capacity($business, $start, $end, $bookings);
 
         $topServices = $bookings->where('status', '!=', Booking::STATUS_CANCELLED)
@@ -47,7 +47,7 @@ class AdminStatisticsService
                 'name' => $name,
                 'bookings' => $items->count(),
                 'revenue' => round($items->whereIn('status', [Booking::STATUS_BOOKED, Booking::STATUS_COMPLETED])
-                    ->sum(fn (Booking $booking) => ((int) ($booking->service?->price_cents ?? 0)) / 100), 2),
+                    ->sum(fn (Booking $booking) => $booking->estimatedRevenueCents() / 100), 2),
             ])->sortByDesc('bookings')->values()->take(10)->all();
 
         return [
@@ -80,7 +80,7 @@ class AdminStatisticsService
                 'cancelled' => $items->where('status', Booking::STATUS_CANCELLED)->count(),
                 'no_show' => $items->where('status', Booking::STATUS_NO_SHOW)->count(),
                 'revenue' => round($items->whereIn('status', [Booking::STATUS_BOOKED, Booking::STATUS_COMPLETED])
-                    ->sum(fn (Booking $booking) => ((int) ($booking->service?->price_cents ?? 0)) / 100), 2),
+                    ->sum(fn (Booking $booking) => $booking->estimatedRevenueCents() / 100), 2),
             ];
         }
         return $rows;

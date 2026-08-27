@@ -37,7 +37,7 @@ class AdminReportController extends Controller
             'date' => ['nullable', 'date_format:Y-m-d'],
         ]);
         $month = CarbonImmutable::createFromFormat('!Y-m', $validated['month'], $business->timezone);
-        $query = $business->bookings()->with('service:id,name,price_cents')
+        $query = $business->bookings()->with('service:id,name,price_cents,price_mode')
             ->whereBetween('date', [$month->startOfMonth()->toDateString(), $month->endOfMonth()->toDateString()])
             ->when($validated['service_id'] ?? null, fn ($q, $id) => $q->where('service_id', $id))
             ->when($validated['status'] ?? null, fn ($q, $status) => $q->where('status', $status))
@@ -55,7 +55,10 @@ class AdminReportController extends Controller
                 substr((string) $booking->start_time, 0, 5), substr((string) $booking->end_time, 0, 5),
                 $booking->service_name, $booking->customer_name, $booking->customer_contact,
                 $booking->customer_phone ?: '', $statusLabels[$booking->status] ?? $booking->status,
-                round(((int) ($booking->service?->price_cents ?? 0)) / 100, 2), $booking->customer_note ?: '',
+                $booking->reportPriceMode() === 'fixed' && $booking->reportPriceCents() !== null
+                    ? round($booking->reportPriceCents() / 100, 2)
+                    : '',
+                $booking->customer_note ?: '',
                 $booking->created_at?->timezone($business->timezone)->format('Y-m-d H:i'),
             ];
         }
@@ -63,7 +66,7 @@ class AdminReportController extends Controller
         foreach ($bookings->groupBy(fn ($booking) => $booking->date->format('Y-m-d')) as $date => $items) {
             $daily[] = [$date, $items->count(), $items->where('status', 'booked')->count(), $items->where('status', 'completed')->count(),
                 $items->where('status', 'cancelled')->count(), $items->where('status', 'no_show')->count(),
-                round($items->whereIn('status', ['booked', 'completed'])->sum(fn ($item) => ((int) ($item->service?->price_cents ?? 0)) / 100), 2)];
+                round($items->whereIn('status', ['booked', 'completed'])->sum(fn ($item) => $item->estimatedRevenueCents() / 100), 2)];
         }
         $writer = (new SimpleXlsxWriter())
             ->addSheet('Foglalások', $rows, [12, 14, 15, 10, 12, 25, 22, 28, 18, 17, 14, 34, 18])

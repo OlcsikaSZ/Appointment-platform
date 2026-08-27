@@ -235,6 +235,8 @@ class AdminBookingController extends Controller
                     'business_id' => $business->id,
                     'service_id' => $service->id,
                     'service_name' => $service->name,
+                    'price_cents_snapshot' => $service->price_cents,
+                    'price_mode_snapshot' => $service->price_mode ?: 'fixed',
                     'date' => $validated['date'],
                     'start_time' => $slot['time'],
                     'end_time' => $slot['endTime'],

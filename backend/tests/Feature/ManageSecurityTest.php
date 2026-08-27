@@ -125,4 +125,20 @@ class ManageSecurityTest extends TestCase
 
         $this->assertTrue($booking->fresh()->manage_token_expires_at->isPast());
     }
+
+    public function test_manage_write_rate_limit_is_enforced(): void
+    {
+        $business = $this->createBusiness(['slug' => 'manage-rate-limit']);
+        $service = $this->createService($business);
+        $booking = $this->createBooking($business, $service);
+
+        for ($attempt = 1; $attempt <= 6; $attempt++) {
+            $this->postJson("/api/v1/bookings/{$booking->manage_token}/reschedule", [])
+                ->assertUnprocessable();
+        }
+
+        $this->postJson("/api/v1/bookings/{$booking->manage_token}/reschedule", [])
+            ->assertTooManyRequests();
+    }
+
 }

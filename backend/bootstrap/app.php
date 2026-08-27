@@ -5,6 +5,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use App\Http\Middleware\EnsureAdminTokenIsActive;
 use App\Http\Middleware\EnsureAdminAccess;
 use App\Http\Middleware\EnsureCustomerAccess;
+use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
 
@@ -16,6 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withCommands()
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->append(SecurityHeaders::class);
+
         $middleware->alias([
             'admin.token.active' => EnsureAdminTokenIsActive::class,
             'admin.access' => EnsureAdminAccess::class,
