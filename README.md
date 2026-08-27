@@ -47,6 +47,14 @@ Komplett, reszponzív online időpontfoglaló rendszer Laravel API-val és build
   - [Tesztelés](#tesztelés)
     - [Backend](#backend)
     - [Frontend](#frontend)
+  - [Új ügyfél production bootstrap](#új-ügyfél-production-bootstrap)
+    - [1. Tiszta adatbázis és migráció](#1-tiszta-adatbázis-és-migráció)
+    - [2. Vállalkozás létrehozása mintaadatok nélkül](#2-vállalkozás-létrehozása-mintaadatok-nélkül)
+    - [3. Két általános háttérfolyamat](#3-két-általános-háttérfolyamat)
+    - [4. Owner létrehozása](#4-owner-létrehozása)
+  - [Hordozható automatikus backup](#hordozható-automatikus-backup)
+    - [Restore próba](#restore-próba)
+  - [Egyparancsos átadás előtti ellenőrzés](#egyparancsos-átadás-előtti-ellenőrzés)
   - [Éles üzemeltetés](#éles-üzemeltetés)
   - [Biztonság és adatvédelem](#biztonság-és-adatvédelem)
     - [Megvalósított védelmek](#megvalósított-védelmek)
@@ -448,7 +456,13 @@ Az adminfelületen elérhető:
 
 ## Tesztelés
 
-A projekt jelenlegi forrása 14 Laravel Feature tesztfájlt, 61 backend tesztesetet és 9 Node.js frontend/RFC ellenőrzést tartalmaz.
+A projekt jelenlegi forrása 15 Laravel Feature tesztfájlt, 64 backend tesztesetet és 10 Node.js frontend/RFC ellenőrzést tartalmaz.
+
+Release/átadás előtt egyben is futtatható:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\release-check.ps1
+```
 
 ### Backend
 
@@ -503,7 +517,146 @@ A frontendellenőrzések lefedik többek között:
 
 Release előtt minden tesztnek zölden kell lefutnia a célkörnyezetben is. Az Excelteszthez a PHP `zip`, a képteszthez GD/WebP támogatás szükséges.
 
+## Új ügyfél production bootstrap
+
+Új megrendelésnél ne a fejlesztői adatbázist másold át. A cél egy tiszta, reprodukálható telepítés ugyanabból a repositoryból.
+
+### 1. Tiszta adatbázis és migráció
+
+```bash
+cd backend
+composer install --no-dev --optimize-autoloader
+cp .env.example .env
+php artisan key:generate
+php artisan migrate --force
+```
+
+Töltsd ki előbb a production `.env` értékeit. Éles ügyfélnél ne használd a demo seedert.
+
+### 2. Vállalkozás létrehozása mintaadatok nélkül
+
+```bash
+php artisan app:bootstrap-client \
+  --slug=default \
+  --name="Vevő vállalkozása" \
+  --email="owner@example.com" \
+  --timezone="Europe/Budapest"
+```
+
+A parancs egy minimális business rekordot és alap H–P 09:00–17:00 munkaidőt hoz létre, de nem készít demo szolgáltatást, review-t vagy mintaadmint. A tulajdonos ezeket az adminfelületről állítja be.
+
+### 3. Két általános háttérfolyamat
+
+Shared hostingen elegendő két, percenként futó cron. A konkrét PHP- és projektútvonal hostingfüggő:
+
+```text
+* * * * * cd /path/to/app/backend && /path/to/php artisan schedule:run >/dev/null 2>&1
+* * * * * cd /path/to/app/backend && /path/to/php artisan queue:work database --queue=emails,default --stop-when-empty --tries=3 --timeout=120 >/dev/null 2>&1
+```
+
+A scheduler kezeli a reminder, retention, image cleanup, token cleanup **és az automatikus backup** feladatokat, ezért új ügyfélnél nem kell külön backup-cront programozni.
+
+### 4. Owner létrehozása
+
+Ha a queue worker már fut, hozd létre az éles tulajdonost:
+
+```bash
+php artisan app:create-owner \
+  --business=default \
+  --name="Vevő Teljes Neve" \
+  --email="owner@example.com"
+```
+
+Az owner aktiválókódja e-mailben érkezik.
+
+## Hordozható automatikus backup
+
+A backup funkció telepítésfüggetlen: az adatbázis-kapcsolatot a meglévő `DB_*` konfigurációból olvassa, az ügyfélspecifikus célkönyvtárat és binárisokat pedig `.env`-ből.
+
+Ajánlott production példa:
+
+```env
+BACKUP_ENABLED=true
+# BACKUP_PATH=/home/account/backups/customer-domain.example
+BACKUP_RETENTION_DAYS=14
+BACKUP_INCLUDE_MEDIA=true
+BACKUP_MYSQLDUMP_BINARY=/usr/bin/mysqldump
+BACKUP_GZIP_BINARY=/usr/bin/gzip
+BACKUP_TIMEOUT_SECONDS=300
+```
+
+A `BACKUP_PATH` opcionális: üresen a Laravel `storage/app/private/backups` könyvtárát használja. Ha a hosting engedi, productionben még jobb a publikus document rooton kívüli külön könyvtár.
+
+A napi backup 01:30-kor fut, vagy kézzel:
+
+```bash
+php artisan app:backup
+```
+
+A mentés egy timestampelt könyvtárat hoz létre, amely tartalmazza:
+
+- `database.sql.gz` – MySQL/MariaDB dump;
+- `media/` – business logók és szolgáltatásképek;
+- `manifest.json` – időpont, fájlméretek és SHA-256 integritási adat.
+
+A jelszó nem kerül parancssori argumentumba vagy backupba: a dump idejére 0600 jogosultságú ideiglenes MySQL option file készül, majd törlődik.
+
+Legfrissebb backup ellenőrzése:
+
+```bash
+php artisan app:backup-verify
+```
+
+Konkrét backup ellenőrzése:
+
+```bash
+php artisan app:backup-verify /path/to/backup-20260827-013000
+```
+
+A retention alapból 14 nap, és csak a `backup-YYYYMMDD-HHMMSS` mintájú saját mentési könyvtárakat törli.
+
+> A szerveroldali backup önmagában nem teljes 3-2-1 stratégia. Időnként másold ki a mentést másik fizikai/logikai helyre is. Az `.env` titkait ne tedd a backupba; azokat jelszókezelőben vagy külön biztonságos konfigurációs nyilvántartásban tartsd.
+
+### Restore próba
+
+Soha ne az éles adatbázison gyakorolj. A legfrissebb `database.sql.gz` fájlt töltsd le, csomagold ki, és egy külön helyi/teszt adatbázisba importáld. A `media/` tartalmat is állítsd vissza, majd futtasd az alkalmazás smoke tesztjét.
+
+## Egyparancsos átadás előtti ellenőrzés
+
+Az új ügyfél konfigurálása után:
+
+```bash
+php artisan app:production-check --business=default
+```
+
+Ez ellenőrzi többek között:
+
+- production env + debug állapot;
+- APP_KEY és HTTPS URL-ek;
+- database queue és SMTP;
+- adatbázis-kapcsolat és pending migrációk;
+- business + igazolt owner;
+- munkaidő, aktív szolgáltatás és jogi dokumentumok;
+- írható Laravel könyvtárak;
+- backup engedélyezését, frissességét és integritását.
+
+Végleges ügyfélátadás előtt használd a szigorú módot:
+
+```bash
+php artisan app:production-check --business=default --strict
+```
+
+A `--strict` a hiányzó szolgáltatást, jogi tartalmat vagy friss backupot is NO-GO hibává emeli.
+
 ## Éles üzemeltetés
+
+A Windowsos deploy wrapper paraméterezhető, ezért új ügyfélnél nem kell új scriptet másolni:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\deploy-production.ps1 -SshTarget ugyfel-ssh-alias
+```
+
+A shared-hosting cron mintát a `deployment/shared-hosting/cron.example.txt` tartalmazza.
 
 Minimális élesítési követelmények:
 
@@ -559,6 +712,8 @@ Reverse proxy vagy tunnel mögött szükség lehet a trusted proxy konfiguráci�
 A beépített jogi dokumentummezők technikai keretet adnak, de nem helyettesítik az adott vállalkozásra szabott, szakember által ellenőrzött adatkezelési tájékoztatót, feltételeket, impresszumot vagy adatfeldolgozói megállapodást.
 
 ## Mentés és visszaállítás
+
+A beépített `app:backup` / `app:backup-verify` parancsok az ajánlott alapfolyamatot automatizálják.
 
 Egy használható mentésnek együtt kell tartalmaznia:
 

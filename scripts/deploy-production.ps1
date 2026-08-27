@@ -1,3 +1,8 @@
+param(
+    [string]$SshTarget = $(if ($env:DEPLOY_SSH_TARGET) { $env:DEPLOY_SSH_TARGET } else { "olcsi-rackhost" }),
+    [string]$RemoteCommand = $(if ($env:DEPLOY_REMOTE_COMMAND) { $env:DEPLOY_REMOTE_COMMAND } else { "~/deploy-production.sh" })
+)
+
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
@@ -72,7 +77,7 @@ try {
     Write-Host "[5/5] Rackhost production deploy inditasa..."
     Write-Host ""
 
-    ssh -t olcsi-rackhost "~/deploy-production.sh"
+    ssh -t $SshTarget $RemoteCommand
 
     if ($LASTEXITCODE -ne 0) {
         throw "A Rackhost deployment hibaval allt le."

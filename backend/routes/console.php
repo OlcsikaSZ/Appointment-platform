@@ -53,6 +53,12 @@ Artisan::command('reminders:dispatch', function (ReminderService $service): void
     ));
 })->purpose('Esedékes 24 és 2 órás foglalási emlékeztetők sorba állítása.');
 
+Schedule::command('app:backup')
+    ->dailyAt('01:30')
+    ->name('appointment-application-backup')
+    ->withoutOverlapping()
+    ->when(fn () => (bool) config('backup.enabled'));
+
 Schedule::call(fn () => app(DataRetentionService::class)->purgeAll())
     ->dailyAt('02:30')
     ->name('appointment-data-retention')
