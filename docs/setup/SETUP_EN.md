@@ -112,9 +112,9 @@ A default XAMPP installation usually uses the `root` database user with an empty
 
 Keep the real `.env` file only in the local or server environment. Never commit or share it.
 
-## 5/A. Create a fresh database
+## 5/A. Create a fresh DEMO database
 
-Use this option for a new installation or a clean demo environment.
+Use this only for local development or a clean demo environment. For a real new customer installation, use the seed-free `migrate` + `app:bootstrap-client` workflow in section 5/C.
 
 1. Start Apache and MySQL in the XAMPP control panel.
 2. Open `http://localhost/phpmyadmin/`.
@@ -169,6 +169,66 @@ Invalidate earlier booking-management links with:
 ```powershell
 php artisan app:invalidate-manage-links --business=default
 ```
+
+
+## 5/C. Bootstrap a clean new customer without demo seed data
+
+For a real customer installation, do not use the demo seeder. The target is to deploy the
+same source code without manual PHP/JS edits and configure only environment-specific and
+customer-specific data.
+
+1. Create a completely empty database.
+2. Configure the final `DB_*` values in `backend/.env`.
+3. Clear stale configuration and run migrations:
+
+```powershell
+php artisan optimize:clear
+php artisan migrate --force
+php artisan migrate:status
+```
+
+4. Create the customer business without sample data:
+
+```powershell
+php artisan app:bootstrap-client `
+  --name="Customer Business" `
+  --email="customer@example.com" `
+  --timezone=Europe/Budapest
+```
+
+The default technical slug is `default`. In the current deployment model one customer gets
+one separate installation, so keeping `default` avoids per-customer frontend source edits.
+
+The bootstrap command:
+
+- creates the active business;
+- creates Monday–Friday 09:00–17:00 working hours by default;
+- creates no demo services;
+- creates no demo reviews;
+- creates no sample administrator.
+
+Override the default working hours when required:
+
+```powershell
+php artisan app:bootstrap-client `
+  --name="Customer Business" `
+  --email="customer@example.com" `
+  --timezone=Europe/Budapest `
+  --work-start=08:00 `
+  --work-end=16:00
+```
+
+Or skip initial working hours completely:
+
+```powershell
+php artisan app:bootstrap-client `
+  --name="Customer Business" `
+  --email="customer@example.com" `
+  --no-working-hours
+```
+
+If the `default` slug already exists, the command intentionally refuses to overwrite
+existing production data.
 
 ## 6. Restore uploaded images
 
@@ -237,6 +297,16 @@ php artisan test
 ```
 
 Backend tests use an in-memory SQLite database and do not modify local MySQL data.
+
+### Full pre-release gate
+
+Run this from the repository root:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\release-check.ps1
+```
+
+It runs repository hygiene checks, `git diff --check`, the full backend PHPUnit suite with warnings treated as failures, and all frontend/static smoke tests. Continue with a release or customer deployment only after `Release check: PASS`. A clean clone requires `composer install` first.
 
 Run the frontend tests from the project root:
 
@@ -313,12 +383,245 @@ A database import does not contain image files. Restore them as described in sec
 
 ## 13. Minimum production configuration
 
+Every customer installation requires at least:
+
 - `APP_ENV=production`;
 - `APP_DEBUG=false`;
-- HTTPS and final application URLs;
-- unique `APP_KEY`, database, and SMTP credentials;
-- a database user with minimum required privileges;
-- a supervised queue worker and a scheduler running every minute;
-- database and uploaded-image backups;
-- log rotation, storage monitoring, and a tested restore procedure;
-- final legal documents and e-mail DNS configuration.
+- `LOG_LEVEL=warning` or a stricter production level;
+- HTTPS and final `APP_URL`, `FRONTEND_URL`, `PUBLIC_APP_URL`;
+- a unique `APP_KEY`;
+- a dedicated least-privilege database user;
+- real SMTP credentials with a separate application password;
+- SPF, DKIM and DMARC;
+- `QUEUE_CONNECTION=database`;
+- a scheduler and queue worker triggered every minute;
+- automatic database and uploaded-media backups;
+- a tested restore procedure;
+- external HTTP monitoring for the public site and `/up`;
+- final customer-specific legal documents.
+
+After production changes:
+
+```bash
+php artisan optimize:clear
+php artisan migrate --force
+```
+
+Never use `migrate:fresh`, `migrate:fresh --seed`, or another destructive database
+reinitialization command on production data.
+
+## 14. Automatic backups
+
+Backups are configured per installation, so the same source code can be reused for every
+customer. Example production `.env`:
+
+```dotenv
+BACKUP_ENABLED=true
+BACKUP_PATH=/home/ACCOUNT/backups/example.com
+BACKUP_RETENTION_DAYS=14
+BACKUP_INCLUDE_MEDIA=true
+BACKUP_MYSQLDUMP_BINARY=/usr/bin/mysqldump
+BACKUP_GZIP_BINARY=/usr/bin/gzip
+BACKUP_TIMEOUT_SECONDS=300
+```
+
+Store backups outside the public document root and restrict access to the hosting account.
+
+Manual backup:
+
+```bash
+php artisan app:backup
+```
+
+Integrity verification:
+
+```bash
+php artisan app:backup-verify
+```
+
+A backup contains:
+
+```text
+backup-YYYYMMDD-HHMMSS/
+├── database.sql.gz
+├── manifest.json
+└── media/
+```
+
+The backup service:
+
+- creates a MySQL/MariaDB dump;
+- stores and verifies a SHA-256 hash;
+- verifies gzip integrity;
+- includes uploaded business/service images;
+- applies 14-day retention by default;
+- normalizes the newer MariaDB `mysqldump` sandbox header for easier restore with older compatible clients.
+
+The Laravel scheduler runs `app:backup` every day at 01:30 when `BACKUP_ENABLED=true`.
+Verify it with:
+
+```bash
+php artisan schedule:list
+```
+
+The `appointment-application-backup` task must be present.
+
+## 15. Shared hosting cron – minimum standard
+
+On shared hosting, two generic cron entries are sufficient. Adjust the path and PHP binary
+to the provider.
+
+Scheduler, every minute:
+
+```bash
+cd /web/example.com/backend && /usr/bin/php8.3 artisan schedule:run >/dev/null 2>&1
+```
+
+Queue worker, every minute:
+
+```bash
+cd /web/example.com/backend && /usr/bin/php8.3 artisan queue:work database --queue=emails,default --stop-when-empty --tries=3 --timeout=120 >/dev/null 2>&1
+```
+
+`--stop-when-empty` is well suited to shared hosting: the worker processes the current
+queue and exits, so the next cron invocation automatically loads the newly deployed code.
+
+## 16. Restore test
+
+A backup is not considered complete until it has been restored successfully at least once
+into a separate test database.
+
+Recommended process:
+
+1. run `app:backup` and `app:backup-verify`;
+2. download the latest `database.sql.gz`, `manifest.json`, and `media/` into a private,
+   non-Git local directory;
+3. compare the downloaded database SHA-256 hash with the manifest;
+4. decompress the SQL dump;
+5. create a separate disposable restore-test database;
+6. import the dump;
+7. verify tables and important record counts.
+
+Never perform a restore test against the live production database. Delete unnecessary
+local copies of real production data after the test and never commit them to Git.
+
+## 17. External monitoring and health check
+
+Laravel health endpoint:
+
+```text
+https://example.com/up
+```
+
+For every customer, create two external HTTP monitors (for example UptimeRobot or another
+uptime service):
+
+```text
+Website: https://example.com/
+Health:  https://example.com/up
+```
+
+A five-minute interval with e-mail alerts is a practical starting point. Send a test alert
+once. Monitoring is an operational setup item per domain, not an application feature.
+
+## 18. Production readiness GO/NO-GO
+
+Technical check:
+
+```bash
+php artisan app:production-check --business=default
+```
+
+Before final customer handover:
+
+```bash
+php artisan app:production-check --business=default --strict
+```
+
+The strict check covers, among other items:
+
+- production environment and debug state;
+- HTTPS URLs and APP_KEY;
+- database queue and SMTP;
+- database connectivity and pending migrations;
+- business, working hours and at least one active service;
+- an activated owner;
+- final legal content;
+- writable Laravel runtime directories;
+- backup availability, integrity and freshness.
+
+Handover should happen only after the strict check reports GO.
+
+## 19. Standard new-customer installation flow
+
+The target is zero manual PHP/JS source edits for a normal new customer.
+
+1. Create domain, DNS, HTTPS and hosting.
+2. Clone/deploy the repository.
+3. Run `composer install`.
+4. Create `backend/.env` from `.env.example`.
+5. Configure unique APP_KEY, URLs, database, SMTP and backup settings.
+6. Create an empty production database.
+7. Run `php artisan migrate --force`.
+8. Run `app:bootstrap-client` using the default `default` slug.
+9. Create the owner:
+
+```bash
+php artisan app:create-owner --business=default --name="Owner Name" --email="owner@example.com"
+```
+
+10. Process the queue, confirm activation-code delivery, and verify owner login.
+11. Configure services, working hours, branding and public content through the admin UI.
+12. Fill in final legal text with the customer's real data.
+13. Create scheduler and queue cron jobs.
+14. Enable backup, then run `app:backup` and `app:backup-verify`.
+15. Create external monitors for `/` and `/up`.
+16. Run a full booking smoke test: booking, e-mail, manage link, reschedule/cancel.
+17. Run `app:production-check --business=default --strict`.
+18. Hand over only after GO.
+
+## 20. Deployment and release flow
+
+Before release, from the repository root:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\release-check.ps1
+```
+
+Then commit and push:
+
+```powershell
+git status
+git add .
+git commit -m "Describe the release"
+git push origin main
+```
+
+The production deploy script supports a configurable SSH target:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass `
+  -File .\scripts\deploy-production.ps1 `
+  -SshTarget customer-ssh-alias `
+  -RemoteCommand "~/deploy-production.sh"
+```
+
+The server-side deployment command/path remains hosting-specific. At minimum it should
+apply the intended release, run `composer install`, `php artisan migrate --force`, clear
+Laravel caches, and perform a production API/health check.
+
+## 21. What remains customer-specific?
+
+The platform source code is shared. A normal new order usually changes only:
+
+- domain, DNS and HTTPS;
+- hosting path, PHP binary and SSH/cron environment;
+- `.env` URLs, database, SMTP and backup path;
+- business identity/contact data and owner;
+- services, prices, durations and working hours;
+- logo, images, colors and page copy;
+- final legal documents;
+- monitoring alert recipients.
+
+If the customer's requirements stay within this model, no new feature development should
+be required.
