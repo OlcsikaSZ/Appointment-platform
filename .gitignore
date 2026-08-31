@@ -62,3 +62,7 @@ gitleaks-report.sarif
 Thumbs.db
 *.swp
 *.swo
+
+# Local marketing source files; only optimized public assets belong in the repository
+marketing-source/
+frontend/assets/sales/source/
