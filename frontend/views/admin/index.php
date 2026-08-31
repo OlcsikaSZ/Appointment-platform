@@ -11,9 +11,27 @@
 <body>
   <a class="skip-link" href="#main-content">Ugrás a tartalomhoz</a>
   <div id="adminApp" v-cloak>
-    <div class="toast-stack" aria-live="polite" aria-atomic="false">
-      <div v-for="toast in toasts.list" :key="toast.id" class="toast" :class="toast.kind" :role="toast.kind === 'error' ? 'alert' : 'status'" @click="toasts.dismiss(toast.id)">{{ toast.message }}</div>
-    </div>
+    <transition name="modal-pop">
+      <div v-if="toasts.list.length" class="feedback-modal-backdrop" @click.self="toasts.clear()">
+        <section
+          class="feedback-modal"
+          :class="toasts.list[0].kind"
+          :role="toasts.list[0].kind === 'error' ? 'alertdialog' : 'status'"
+          aria-modal="true"
+          aria-labelledby="feedbackModalTitle"
+          aria-describedby="feedbackModalMessage"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          <div class="feedback-icon" aria-hidden="true">{{ toasts.list[0].kind === 'error' ? '!' : '✓' }}</div>
+          <div class="feedback-copy">
+            <strong id="feedbackModalTitle">{{ toasts.list[0].kind === 'error' ? 'Nem sikerült' : 'Sikeres művelet' }}</strong>
+            <p id="feedbackModalMessage">{{ toasts.list[0].message }}</p>
+          </div>
+          <button class="feedback-close" type="button" @click="toasts.clear()">Rendben</button>
+        </section>
+      </div>
+    </transition>
 
     <header class="topbar">
       <a class="brand" href="<?= route_url('main') ?>">

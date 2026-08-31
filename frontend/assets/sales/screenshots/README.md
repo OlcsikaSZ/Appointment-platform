@@ -1,23 +1,28 @@
-# Értékesítési screenshotok
+# Olcsi Business – értékesítési screenshotok
 
-Ide **csak a végleges, webre optimalizált** screenshotok kerüljenek. Ezek a fájlok Gitbe kerülnek, ezért nem tartalmazhatnak valódi ügyféladatot, e-mail-címet, telefonszámot, tokent vagy más személyes adatot.
+A `/bemutato` oldal az itt található optimalizált WebP képeket használja.
 
-A `/bemutato` oldal automatikusan megjeleníti azokat a képeket, amelyek a következő neveken léteznek:
+## Végleges fájlok
 
-1. `01-home.webp`
-2. `02-services.webp`
-3. `03-booking.webp`
-4. `04-booking-mobile.webp`
-5. `05-admin-calendar.webp`
-6. `06-statistics.webp`
+- `01-home.webp` – Aranyvonal Hair Studio főoldal / hero
+- `02-services.webp` – szolgáltatásválasztás
+- `03-booking.webp` – desktop időpontválasztás konkrét szabad időpontokkal
+- `04-booking-mobile.webp` – mobil időpontválasztás
+- `05-admin-calendar.webp` – admin havi naptár minta foglalásokkal
+- `06-statistics.webp` – statisztikai nézet
 
-Javasolt elvek:
+Ezek a fájlok publikus webes assetek, ezért **Gitre és productionre is mehetnek**.
 
-- desktop: kb. 1440×900 körüli böngészőablak;
-- mobil: kb. 390×844;
-- 100% böngésző-zoom;
-- WebP export;
-- nincs DevTools, localhost, tesztjelszó vagy személyes adat a képen;
-- ugyanaz a demó vállalkozás szerepeljen minden képen.
+A nagyobb, nyers PNG forrásképek maradjanak a repository-n kívüli / gitignore-olt `marketing-source/screenshots/` könyvtárban.
 
-A nyers PNG-ket / szerkesztési forrásokat ne ebbe a mappába tedd. Azok maradjanak lokálisan vagy külön, nem publikus tárhelyen.
+## Videó
+
+A bemutatóoldal videóhelye már elő van készítve. A videó elkészülte után a
+`frontend/views/bemutato/index.php` fájlban a `$videoEmbedUrl` változóhoz kell
+beilleszteni a YouTube embed URL-t. Üres értéknél a teljes videós szekció rejtve marad.
+
+Példa:
+
+```php
+$videoEmbedUrl = 'https://www.youtube-nocookie.com/embed/VIDEO_ID';
+```

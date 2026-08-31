@@ -1012,3 +1012,62 @@ body.modal-open { overflow:hidden; }
     font-size: 6px;
   }
 }
+
+/* Kis visszajelző modal: minden admin hiba és sikeres művelet ugyanazon a helyen jelenik meg. */
+.feedback-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(19, 24, 43, .32);
+  backdrop-filter: blur(2px);
+}
+.feedback-modal {
+  width: min(430px, 100%);
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  gap: 14px 16px;
+  align-items: center;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--paper-raised);
+  box-shadow: var(--shadow-lg);
+}
+.feedback-icon {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--sage-soft, #eef5ef);
+  color: var(--sage, #52735c);
+  font-size: 22px;
+  font-weight: 800;
+}
+.feedback-modal.error .feedback-icon {
+  background: #fff0ee;
+  color: var(--rose);
+}
+.feedback-copy { min-width: 0; }
+.feedback-copy strong { display: block; font-family: var(--font-display); font-size: 20px; }
+.feedback-copy p { margin: 5px 0 0; color: var(--ink-soft); line-height: 1.5; overflow-wrap: anywhere; }
+.feedback-modal.error .feedback-copy p { color: var(--ink); }
+.feedback-close {
+  grid-column: 1 / -1;
+  min-height: 42px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--ink);
+  color: #fff;
+  font-weight: 750;
+  cursor: pointer;
+}
+.feedback-close:hover { filter: brightness(1.08); }
+.feedback-close:focus-visible { outline: 2.5px solid var(--amber); outline-offset: 2px; }
+@media (max-width: 520px) {
+  .feedback-modal-backdrop { padding: 14px; }
+  .feedback-modal { padding: 17px; border-radius: 17px; }
+}

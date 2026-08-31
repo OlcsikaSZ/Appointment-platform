@@ -1,45 +1,57 @@
 <?php
 $showcaseScreenshots = [
-    [
+    'home' => [
         'file' => '01-home.webp',
         'label' => 'Saját arculatú vállalkozói weboldal',
-        'description' => 'A szolgáltató saját neve, arculata, bemutatkozása és szolgáltatásai egy rendezett, mobilbarát felületen.',
+        'description' => 'A vendég már az első pillanatban a te márkáddal találkozik – nem egy közös piactérrel.',
     ],
-    [
+    'services' => [
         'file' => '02-services.webp',
         'label' => 'Átlátható szolgáltatásválasztás',
-        'description' => 'A vendég rögtön látja, mit foglalhat, mennyi ideig tart és mennyibe kerül.',
+        'description' => 'Ár, időtartam, részletek és vizuális megjelenés egy rendezett, könnyen átlátható felületen.',
     ],
-    [
+    'booking' => [
         'file' => '03-booking.webp',
         'label' => 'Valóban szabad időpontok',
-        'description' => 'A rendszer a munkaidő, a foglalások és a blokkolások alapján kínál fel időpontot.',
+        'description' => 'A rendszer a munkaidő, foglalások, pufferidők és blokkolások alapján kínál fel időpontot.',
     ],
-    [
+    'booking_mobile' => [
         'file' => '04-booking-mobile.webp',
-        'label' => 'Telefonról is egyszerű',
-        'description' => 'A foglalási folyamat mobilon is gyorsan és kényelmesen használható.',
+        'label' => 'Telefonról is kényelmes',
+        'description' => 'A foglalási folyamat mobilon is gyors, egyszerű és átlátható marad.',
     ],
-    [
+    'admin' => [
         'file' => '05-admin-calendar.webp',
         'label' => 'Adminnaptár egy helyen',
-        'description' => 'Foglalások, manuális időpontok, blokkolások és státuszok egyetlen kezelőfelületen.',
+        'description' => 'Foglalások, manuális időpontok, blokkolások, státuszok és keresés egyetlen kezelőfelületen.',
     ],
-    [
+    'statistics' => [
         'file' => '06-statistics.webp',
-        'label' => 'Statisztikák és áttekintés',
-        'description' => 'A vállalkozó gyorsan átláthatja a foglalásokat, teljesítéseket és fontosabb mutatókat.',
+        'label' => 'Statisztikák és üzleti áttekintés',
+        'description' => 'Gyorsan látható a foglalásszám, lemondási arány, becsült bevétel és a legkeresettebb szolgáltatások.',
     ],
 ];
 
-$availableScreenshots = array_values(array_filter(
-    $showcaseScreenshots,
-    static fn (array $item): bool => is_file(__DIR__.'/../../assets/sales/screenshots/'.$item['file'])
-));
+$screenshotBase = __DIR__.'/../../assets/sales/screenshots/';
+foreach ($showcaseScreenshots as $key => $item) {
+    $showcaseScreenshots[$key]['available'] = is_file($screenshotBase.$item['file']);
+}
 
+$hasScreenshots = count(array_filter($showcaseScreenshots, static fn (array $item): bool => $item['available'])) >= 4;
 $demoUrl = route_url('main');
 $contactEmail = 'olcsikaszbusiness@gmail.com';
 $contactHref = 'mailto:'.$contactEmail.'?subject='.rawurlencode('DEMÓ – Olcsi Business időpontfoglaló');
+
+// A videó felvétele után ide elég beilleszteni a YouTube embed URL-t,
+// például: https://www.youtube-nocookie.com/embed/VIDEO_ID
+// Üresen hagyva a videós blokk nem jelenik meg.
+$videoEmbedUrl = '';
+$hasVideo = trim($videoEmbedUrl) !== '';
+
+function sales_screenshot_src(array $item): string
+{
+    return asset('assets/sales/screenshots/'.$item['file']);
+}
 ?>
 <!doctype html>
 <html lang="hu">
@@ -48,7 +60,7 @@ $contactHref = 'mailto:'.$contactEmail.'?subject='.rawurlencode('DEMÓ – Olcsi
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="Saját arculatú vállalkozói weboldal online időpontfoglalással, adminfelülettel, automatikus e-mailekkel és üzemeltetési háttérrel." />
   <meta name="theme-color" content="#191b1d" />
-  <meta property="og:title" content="Olcsi Business – weboldal és online időpontfoglalás" />
+  <meta property="og:title" content="Olcsi Business – saját weboldal és online időpontfoglalás" />
   <meta property="og:description" content="Kevesebb üzenetváltás, egyszerűbb időpontkezelés és saját online megjelenés egy rendszerben." />
   <meta property="og:type" content="website" />
   <title>Olcsi Business – Online időpontfoglaló vállalkozóknak</title>
@@ -71,12 +83,13 @@ $contactHref = 'mailto:'.$contactEmail.'?subject='.rawurlencode('DEMÓ – Olcsi
         </span>
         <span>
           <strong>Olcsi Business</strong>
-          <small>Weboldal + online időpontfoglalás</small>
+          <small>Saját weboldal + online időpontfoglalás</small>
         </span>
       </a>
 
       <nav class="sales-nav" aria-label="Bemutató navigáció">
         <a href="#mit-kapsz">Mit kapsz?</a>
+        <?php if ($hasScreenshots): ?><a href="#kepernyokepek">Képernyőképek</a><?php endif; ?>
         <a href="#hogyan-mukodik">Hogyan működik?</a>
         <a class="sales-nav-cta" href="<?= htmlspecialchars($demoUrl, ENT_QUOTES) ?>">Élő demo</a>
       </nav>
@@ -86,7 +99,8 @@ $contactHref = 'mailto:'.$contactEmail.'?subject='.rawurlencode('DEMÓ – Olcsi
   <main id="sales-main">
     <section class="sales-hero">
       <div class="sales-wrap sales-hero-grid">
-        <div class="sales-hero-copy">
+        <div class="sales-hero-copy" data-reveal>
+          <div class="sales-demo-pill"><span></span> Működő demó: Aranyvonal Hair Studio</div>
           <p class="sales-kicker">Saját rendszer szolgáltató vállalkozásoknak</p>
           <h1>Ne üzenetekben szervezd az időpontjaidat.</h1>
           <p class="sales-hero-lead">Saját arculatú weboldal és online időpontfoglaló egyben. A vendégeid 0–24-ben foglalhatnak, te pedig egyetlen adminfelületen látod és kezeled az időpontokat.</p>
@@ -106,7 +120,7 @@ $contactHref = 'mailto:'.$contactEmail.'?subject='.rawurlencode('DEMÓ – Olcsi
           </ul>
         </div>
 
-        <div class="sales-product-scene" aria-label="Az időpontfoglaló rendszer szemléltetése">
+        <div class="sales-product-scene" aria-label="Az időpontfoglaló rendszer szemléltetése" data-reveal>
           <div class="sales-glow sales-glow-one"></div>
           <div class="sales-glow sales-glow-two"></div>
 
@@ -132,9 +146,9 @@ $contactHref = 'mailto:'.$contactEmail.'?subject='.rawurlencode('DEMÓ – Olcsi
                   </div>
                 </div>
                 <div class="sales-preview-times">
-                  <button type="button">09:00</button><button type="button">09:45</button>
-                  <button type="button" class="active">10:30</button><button type="button">13:15</button>
-                  <button type="button">15:00</button><button type="button">16:30</button>
+                  <button type="button" tabindex="-1">09:00</button><button type="button" tabindex="-1">09:45</button>
+                  <button type="button" tabindex="-1" class="active">10:30</button><button type="button" tabindex="-1">13:15</button>
+                  <button type="button" tabindex="-1">15:00</button><button type="button" tabindex="-1">16:30</button>
                 </div>
               </div>
             </div>
@@ -171,39 +185,39 @@ $contactHref = 'mailto:'.$contactEmail.'?subject='.rawurlencode('DEMÓ – Olcsi
 
     <section id="mit-kapsz" class="sales-section">
       <div class="sales-wrap">
-        <div class="sales-section-heading">
+        <div class="sales-section-heading" data-reveal>
           <p class="sales-kicker">Nem csak egy foglaló</p>
           <h2>Egy komplett vállalkozói online rendszer.</h2>
           <p>Az oldal megjelenésétől az időpontkezelésen át az automatikus értesítésekig egyetlen, vállalkozásodra szabható rendszerben.</p>
         </div>
 
         <div class="sales-feature-grid">
-          <article class="sales-feature-card sales-feature-card-large">
+          <article class="sales-feature-card sales-feature-card-large" data-reveal>
             <span class="sales-feature-number">01</span>
             <h3>Saját weboldal és arculat</h3>
             <p>Saját név, logó, színek, bemutatkozás, szolgáltatások, árak, képek, kapcsolati adatok és GYIK.</p>
           </article>
-          <article class="sales-feature-card">
+          <article class="sales-feature-card" data-reveal>
             <span class="sales-feature-number">02</span>
             <h3>Online időpontfoglalás</h3>
             <p>A vendég csak a valóban elérhető időpontok közül választ.</p>
           </article>
-          <article class="sales-feature-card">
+          <article class="sales-feature-card" data-reveal>
             <span class="sales-feature-number">03</span>
             <h3>Adminnaptár</h3>
             <p>Foglalás, blokkolás, manuális időpont és státuszkezelés egy helyen.</p>
           </article>
-          <article class="sales-feature-card">
+          <article class="sales-feature-card" data-reveal>
             <span class="sales-feature-number">04</span>
             <h3>Automatikus e-mailek</h3>
             <p>Visszaigazolás, módosítás, lemondás és időpont-emlékeztetők.</p>
           </article>
-          <article class="sales-feature-card sales-feature-card-dark">
+          <article class="sales-feature-card sales-feature-card-dark" data-reveal>
             <span class="sales-feature-number">05</span>
             <h3>Ügyféltörténet és statisztikák</h3>
             <p>Átláthatóbb működés és kevesebb fejben tartandó információ.</p>
           </article>
-          <article class="sales-feature-card">
+          <article class="sales-feature-card" data-reveal>
             <span class="sales-feature-number">06</span>
             <h3>Technikai háttér</h3>
             <p>Beállítás, üzemeltetés, mentések, frissítések és support – nem neked kell szervert menedzselned.</p>
@@ -212,87 +226,206 @@ $contactHref = 'mailto:'.$contactEmail.'?subject='.rawurlencode('DEMÓ – Olcsi
       </div>
     </section>
 
-    <section id="hogyan-mukodik" class="sales-section sales-section-alt">
-      <div class="sales-wrap">
-        <div class="sales-section-heading sales-section-heading-left">
-          <p class="sales-kicker">A vendég oldaláról egyszerű</p>
-          <h2>Három lépés. Ennyi.</h2>
-        </div>
-
-        <div class="sales-steps">
-          <article>
-            <span>1</span>
-            <div><h3>Szolgáltatást választ</h3><p>Látja az időtartamot, az árat és a szolgáltatás részleteit.</p></div>
-          </article>
-          <article>
-            <span>2</span>
-            <div><h3>Időpontot választ</h3><p>A rendszer csak a valóban szabad, szabályoknak megfelelő időpontokat kínálja fel.</p></div>
-          </article>
-          <article>
-            <span>3</span>
-            <div><h3>Foglal – a rendszer pedig dolgozik</h3><p>Visszaigazolás, kezelőlink és emlékeztetők automatikusan mehetnek ki.</p></div>
-          </article>
-        </div>
-
-        <div class="sales-owner-panel">
-          <div>
-            <p class="sales-kicker">A vállalkozó oldaláról átlátható</p>
-            <h3>Te dolgozol. A rendszer rendezi az időpontokat.</h3>
-            <p>Az adminfelületen látod a naptárat, az ügyféltörténetet, a státuszokat és a fontosabb statisztikákat. Ha telefonon érkezik egy foglalás, azt is fel tudod vinni.</p>
-          </div>
-          <div class="sales-owner-metrics" aria-hidden="true">
-            <div><strong>28</strong><small>foglalás ezen a héten</small></div>
-            <div><strong>92%</strong><small>teljesített időpont</small></div>
-            <div><strong>4.9</strong><small>mintaértékelés</small></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <?php if ($availableScreenshots): ?>
+    <?php if ($hasScreenshots): ?>
       <section class="sales-section sales-screenshot-section" id="kepernyokepek">
         <div class="sales-wrap">
-          <div class="sales-section-heading">
-            <p class="sales-kicker">Nézd meg közelebbről</p>
-            <h2>Így néz ki működés közben.</h2>
-            <p>Valós képernyőképek az élő demó rendszerből.</p>
+          <div class="sales-section-heading" data-reveal>
+            <p class="sales-kicker">Valódi képernyőképek</p>
+            <h2>Nem látványterv. Működő rendszer.</h2>
+            <p>Az Aranyvonal Hair Studio demóban ugyanazt a folyamatot látod, amit később a saját vállalkozásod arculatára lehet szabni.</p>
           </div>
 
-          <div class="sales-screenshot-grid">
-            <?php foreach ($availableScreenshots as $index => $screenshot): ?>
-              <figure class="sales-screenshot-card <?= $index === 0 ? 'sales-screenshot-card-featured' : '' ?>">
-                <a href="<?= asset('assets/sales/screenshots/'.$screenshot['file']) ?>" target="_blank" rel="noopener">
-                  <img src="<?= asset('assets/sales/screenshots/'.$screenshot['file']) ?>" alt="<?= htmlspecialchars($screenshot['label'], ENT_QUOTES) ?>" loading="lazy" decoding="async" />
+          <?php if ($showcaseScreenshots['home']['available']): ?>
+            <article class="sales-showcase-row sales-showcase-row-hero" data-reveal>
+              <div class="sales-showcase-copy">
+                <span class="sales-story-index">01 / Saját megjelenés</span>
+                <h3><?= htmlspecialchars($showcaseScreenshots['home']['label']) ?></h3>
+                <p><?= htmlspecialchars($showcaseScreenshots['home']['description']) ?></p>
+                <ul>
+                  <li>saját név, logó és színvilág</li>
+                  <li>mobilbarát, modern megjelenés</li>
+                  <li>közvetlen foglalási CTA</li>
+                </ul>
+              </div>
+              <a class="sales-browser-frame" href="<?= sales_screenshot_src($showcaseScreenshots['home']) ?>" target="_blank" rel="noopener" aria-label="<?= htmlspecialchars($showcaseScreenshots['home']['label'], ENT_QUOTES) ?> megnyitása nagy méretben">
+                <span class="sales-frame-bar" aria-hidden="true"><i></i><i></i><i></i><b>aranyvonal / foglalási oldal</b></span>
+                <img src="<?= sales_screenshot_src($showcaseScreenshots['home']) ?>" alt="<?= htmlspecialchars($showcaseScreenshots['home']['label'], ENT_QUOTES) ?>" loading="lazy" decoding="async" />
+              </a>
+            </article>
+          <?php endif; ?>
+
+          <div class="sales-showcase-pair">
+            <?php if ($showcaseScreenshots['services']['available']): ?>
+              <article class="sales-showcase-card" data-reveal>
+                <div class="sales-showcase-card-copy">
+                  <span class="sales-story-index">02 / Szolgáltatások</span>
+                  <h3><?= htmlspecialchars($showcaseScreenshots['services']['label']) ?></h3>
+                  <p><?= htmlspecialchars($showcaseScreenshots['services']['description']) ?></p>
+                </div>
+                <a class="sales-shot-frame sales-shot-frame-tall" href="<?= sales_screenshot_src($showcaseScreenshots['services']) ?>" target="_blank" rel="noopener">
+                  <img src="<?= sales_screenshot_src($showcaseScreenshots['services']) ?>" alt="<?= htmlspecialchars($showcaseScreenshots['services']['label'], ENT_QUOTES) ?>" loading="lazy" decoding="async" />
                 </a>
-                <figcaption>
-                  <strong><?= htmlspecialchars($screenshot['label']) ?></strong>
-                  <span><?= htmlspecialchars($screenshot['description']) ?></span>
-                </figcaption>
+              </article>
+            <?php endif; ?>
+
+            <?php if ($showcaseScreenshots['booking']['available']): ?>
+              <article class="sales-showcase-card sales-showcase-card-dark" data-reveal>
+                <div class="sales-showcase-card-copy">
+                  <span class="sales-story-index">03 / Foglalás</span>
+                  <h3><?= htmlspecialchars($showcaseScreenshots['booking']['label']) ?></h3>
+                  <p><?= htmlspecialchars($showcaseScreenshots['booking']['description']) ?></p>
+                </div>
+                <a class="sales-shot-frame sales-shot-frame-tall" href="<?= sales_screenshot_src($showcaseScreenshots['booking']) ?>" target="_blank" rel="noopener">
+                  <img src="<?= sales_screenshot_src($showcaseScreenshots['booking']) ?>" alt="<?= htmlspecialchars($showcaseScreenshots['booking']['label'], ENT_QUOTES) ?>" loading="lazy" decoding="async" />
+                </a>
+              </article>
+            <?php endif; ?>
+          </div>
+
+          <?php if ($showcaseScreenshots['booking_mobile']['available'] && $showcaseScreenshots['booking']['available']): ?>
+            <article class="sales-mobile-showcase" data-reveal>
+              <div class="sales-mobile-showcase-copy">
+                <span class="sales-story-index">04 / Mobil</span>
+                <h3>Ugyanaz az élmény telefonon is.</h3>
+                <p>A vendégnek nem kell alkalmazást telepítenie. Megnyitja az oldalt, kiválasztja a szolgáltatást és lefoglalja a neki megfelelő szabad időpontot.</p>
+                <div class="sales-mini-proof"><span>✓</span> reszponzív foglalás</div>
+                <div class="sales-mini-proof"><span>✓</span> érintőképernyőre optimalizált vezérlés</div>
+                <div class="sales-mini-proof"><span>✓</span> külön mobilalkalmazás nélkül</div>
+              </div>
+              <div class="sales-device-stage" aria-label="Desktop és mobil foglalási nézet">
+                <a class="sales-device-desktop" href="<?= sales_screenshot_src($showcaseScreenshots['booking']) ?>" target="_blank" rel="noopener" aria-label="Desktop foglalási nézet megnyitása">
+                  <img src="<?= sales_screenshot_src($showcaseScreenshots['booking']) ?>" alt="Desktop időpontfoglalási nézet" loading="lazy" decoding="async" />
+                </a>
+                <a class="sales-device-phone" href="<?= sales_screenshot_src($showcaseScreenshots['booking_mobile']) ?>" target="_blank" rel="noopener" aria-label="Mobil foglalási nézet megnyitása">
+                  <span class="sales-device-phone-notch" aria-hidden="true"></span>
+                  <img src="<?= sales_screenshot_src($showcaseScreenshots['booking_mobile']) ?>" alt="<?= htmlspecialchars($showcaseScreenshots['booking_mobile']['label'], ENT_QUOTES) ?>" loading="lazy" decoding="async" />
+                </a>
+              </div>
+            </article>
+          <?php endif; ?>
+
+          <div class="sales-backoffice-heading" data-reveal>
+            <div>
+              <p class="sales-kicker">A háttérben sem lesz káosz</p>
+              <h3>A vállalkozó oldaláról is átlátható.</h3>
+            </div>
+            <p>Naptár, státuszok, ügyfelek és üzleti mutatók egy helyen – azért, hogy ne fejben vagy üzenetek között kelljen összerakni a napot.</p>
+          </div>
+
+          <div class="sales-backoffice-grid">
+            <?php if ($showcaseScreenshots['admin']['available']): ?>
+              <figure class="sales-backoffice-card sales-backoffice-card-wide" data-reveal>
+                <a href="<?= sales_screenshot_src($showcaseScreenshots['admin']) ?>" target="_blank" rel="noopener">
+                  <img src="<?= sales_screenshot_src($showcaseScreenshots['admin']) ?>" alt="<?= htmlspecialchars($showcaseScreenshots['admin']['label'], ENT_QUOTES) ?>" loading="lazy" decoding="async" />
+                </a>
+                <figcaption><strong><?= htmlspecialchars($showcaseScreenshots['admin']['label']) ?></strong><span><?= htmlspecialchars($showcaseScreenshots['admin']['description']) ?></span></figcaption>
               </figure>
-            <?php endforeach; ?>
+            <?php endif; ?>
+
+            <?php if ($showcaseScreenshots['statistics']['available']): ?>
+              <figure class="sales-backoffice-card" data-reveal>
+                <a href="<?= sales_screenshot_src($showcaseScreenshots['statistics']) ?>" target="_blank" rel="noopener">
+                  <img src="<?= sales_screenshot_src($showcaseScreenshots['statistics']) ?>" alt="<?= htmlspecialchars($showcaseScreenshots['statistics']['label'], ENT_QUOTES) ?>" loading="lazy" decoding="async" />
+                </a>
+                <figcaption><strong><?= htmlspecialchars($showcaseScreenshots['statistics']['label']) ?></strong><span><?= htmlspecialchars($showcaseScreenshots['statistics']['description']) ?></span></figcaption>
+              </figure>
+            <?php endif; ?>
           </div>
         </div>
       </section>
     <?php endif; ?>
 
-    <section class="sales-section sales-fit-section">
-      <div class="sales-wrap sales-fit-grid">
-        <div>
-          <p class="sales-kicker">Kinek való?</p>
-          <h2>Ha időpontokra dolgozol, valószínűleg neked.</h2>
+    <?php if ($hasVideo): ?>
+      <section class="sales-section sales-video-section" id="video">
+        <div class="sales-wrap sales-video-grid">
+          <div class="sales-video-copy" data-reveal>
+            <p class="sales-kicker">Kb. 45 másodperc</p>
+            <h2>Nézd meg, hogyan jut el a vendég a szolgáltatástól a lefoglalt időpontig.</h2>
+            <p>Rövid bemutató a publikus foglalási folyamatról és az adminoldal legfontosabb részeiről.</p>
+          </div>
+          <div class="sales-video-frame" data-reveal>
+            <iframe src="<?= htmlspecialchars($videoEmbedUrl, ENT_QUOTES) ?>" title="Olcsi Business időpontfoglaló bemutató videó" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+          </div>
         </div>
-        <div class="sales-professions" aria-label="Példák célcsoportokra">
-          <span>Fodrász</span><span>Barber</span><span>Masszőr</span><span>Körmös</span><span>Kozmetikus</span><span>Edző</span><span>Oktató</span><span>Tanácsadó</span><span>Szolgáltató</span>
+      </section>
+    <?php endif; ?>
+
+    <section id="hogyan-mukodik" class="sales-section sales-section-alt">
+      <div class="sales-wrap">
+        <div class="sales-section-heading sales-section-heading-left" data-reveal>
+          <p class="sales-kicker">A vendég oldaláról egyszerű</p>
+          <h2>Három lépés. Ennyi.</h2>
+        </div>
+
+        <div class="sales-steps">
+          <article data-reveal>
+            <span>1</span>
+            <div><h3>Szolgáltatást választ</h3><p>Látja az időtartamot, az árat és a szolgáltatás részleteit.</p></div>
+          </article>
+          <article data-reveal>
+            <span>2</span>
+            <div><h3>Időpontot választ</h3><p>A rendszer csak a valóban szabad, szabályoknak megfelelő időpontokat kínálja fel.</p></div>
+          </article>
+          <article data-reveal>
+            <span>3</span>
+            <div><h3>Foglal – a rendszer pedig dolgozik</h3><p>Visszaigazolás, kezelőlink és emlékeztetők automatikusan mehetnek ki.</p></div>
+          </article>
+        </div>
+
+        <div class="sales-owner-panel" data-reveal>
+          <div>
+            <p class="sales-kicker">A vállalkozó oldaláról átlátható</p>
+            <h3>Te dolgozol. A rendszer rendezi az időpontokat.</h3>
+            <p>Az adminfelületen látod a naptárat, az ügyféltörténetet, a státuszokat és a fontosabb statisztikákat. Ha telefonon érkezik egy foglalás, azt is fel tudod vinni.</p>
+          </div>
+          <div class="sales-owner-metrics" aria-label="A rendszer három fő működési előnye">
+            <div><strong>0–24</strong><small>a vendégek akkor foglalnak, amikor nekik kényelmes</small></div>
+            <div><strong>1 hely</strong><small>foglalások, ügyfelek és státuszok egy adminfelületen</small></div>
+            <div><strong>Auto</strong><small>visszaigazolások és emlékeztetők automatizálhatók</small></div>
+          </div>
         </div>
       </div>
     </section>
 
+    <section class="sales-section sales-fit-section">
+      <div class="sales-wrap sales-fit-grid" data-reveal>
+        <div class="sales-fit-intro">
+          <p class="sales-kicker">Kinek való?</p>
+          <h2>Ha időpontokra dolgozol, jó eséllyel neked.</h2>
+        </div>
+        <div class="sales-audience-list" aria-label="Példák olyan vállalkozásokra, amelyeknek hasznos lehet a rendszer">
+          <article>
+            <span>01</span>
+            <div><strong>Szépség &amp; megjelenés</strong><p>Fodrász · barber · körmös · kozmetikus</p></div>
+          </article>
+          <article>
+            <span>02</span>
+            <div><strong>Wellness &amp; mozgás</strong><p>Masszőr · személyi edző · egyéni szolgáltatások</p></div>
+          </article>
+          <article>
+            <span>03</span>
+            <div><strong>Tudás &amp; tanácsadás</strong><p>Oktató · magántanár · coach · tanácsadó</p></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="sales-partner-strip">
+      <div class="sales-wrap sales-partner-card" data-reveal>
+        <span class="sales-partner-badge">Referencia partner program</span>
+        <div>
+          <h2>Az első referenciahelyek kedvezményes bevezetéssel indulhatnak.</h2>
+          <p>Ha szeretnéd a saját vállalkozásod arculatára szabva látni a rendszert, írj, és megnézzük, hogyan illeszthető a működésedhez.</p>
+        </div>
+        <a class="sales-button sales-button-secondary" href="<?= htmlspecialchars($contactHref, ENT_QUOTES) ?>">Érdekel a lehetőség</a>
+      </div>
+    </section>
+
     <section class="sales-final-cta">
-      <div class="sales-wrap sales-final-card">
+      <div class="sales-wrap sales-final-card" data-reveal>
         <div>
           <p class="sales-kicker">Nézd meg valódi működés közben</p>
           <h2>Próbáld ki vendégként az élő demót.</h2>
-          <p>Nem prezentáció: kattints végig egy valódi foglalási folyamatot, és nézd meg, milyen élményt kapna a saját vendéged.</p>
         </div>
         <div class="sales-final-actions">
           <a class="sales-button sales-button-light" href="<?= htmlspecialchars($demoUrl, ENT_QUOTES) ?>">Élő demo megnyitása <span aria-hidden="true">→</span></a>

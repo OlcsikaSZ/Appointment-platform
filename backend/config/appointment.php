@@ -26,4 +26,7 @@ return [
     // Kizárólag local/testing mintaadminhoz. Éles owner: php artisan app:create-owner
     'admin_seed_email' => env('ADMIN_SEED_EMAIL', 'admin@example.test'),
     'admin_seed_password' => env('ADMIN_SEED_PASSWORD'),
+
+    // Demo adatgenerálás productionben alapból tiltva. Csak dedikált demo példányon kapcsold be.
+    'demo_data_allowed' => filter_var(env('DEMO_DATA_ALLOWED', false), FILTER_VALIDATE_BOOL),
 ];

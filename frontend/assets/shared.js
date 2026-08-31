@@ -524,7 +524,9 @@
       if (response.status === 401 && token) {
         window.dispatchEvent(new CustomEvent('appointment:auth-expired', { detail: data }));
       }
-      const message = data.message || (data.errors && Object.values(data.errors)[0]?.[0]) || `HTTP ${response.status}`;
+      const validationMessage = data.errors && Object.values(data.errors)[0]?.[0];
+      const rawMessage = validationMessage || data.message || `HTTP ${response.status}`;
+      const message = humanizeApiMessage(rawMessage, response.status);
       const error = new Error(message);
       error.status = response.status;
       error.data = data;
@@ -533,14 +535,43 @@
     return data;
   }
 
-  function useToasts(reactive) {
+  function humanizeApiMessage(message, status = 0) {
+    const raw = String(message || '').trim();
+    const known = {
+      'validation.confirmed': 'A két megadott érték nem egyezik.',
+      'validation.required': 'Töltsd ki a kötelező mezőket.',
+      'validation.email': 'Adj meg egy érvényes e-mail-címet.',
+      'validation.min.string': 'A megadott érték túl rövid.',
+      'validation.max.string': 'A megadott érték túl hosszú.',
+      'validation.regex': 'A megadott érték formátuma nem megfelelő.',
+      'validation.password.letters': 'A jelszónak betűt is kell tartalmaznia.',
+      'validation.password.mixed': 'A jelszónak kis- és nagybetűt is kell tartalmaznia.',
+      'validation.password.numbers': 'A jelszónak számot is kell tartalmaznia.',
+      'validation.password.symbols': 'A jelszónak különleges karaktert is kell tartalmaznia.'
+    };
+
+    if (known[raw]) return known[raw];
+    if (raw.startsWith('validation.')) return 'Ellenőrizd a megadott adatokat, majd próbáld újra.';
+    if (/^HTTP\s+\d+$/i.test(raw)) {
+      if (status === 422) return 'Ellenőrizd a megadott adatokat, majd próbáld újra.';
+      if (status === 429) return 'Túl sok próbálkozás történt. Várj egy kicsit, majd próbáld újra.';
+      if (status >= 500) return 'Átmeneti szerverhiba történt. Próbáld újra néhány perc múlva.';
+    }
+    return raw || 'Váratlan hiba történt. Próbáld újra.';
+  }
+
+  function useToasts(reactive, options = {}) {
     const state = reactive([]);
     let counter = 0;
+    const single = Boolean(options.single);
+    const successTimeout = options.successTimeout === undefined ? 4200 : Number(options.successTimeout);
+    const errorTimeout = options.errorTimeout === undefined ? 4200 : Number(options.errorTimeout);
 
-    function push(kind, message, timeout = 4200) {
+    function push(kind, message, timeout) {
+      if (single) state.splice(0, state.length);
       const id = ++counter;
-      state.push({ id, kind, message });
-      if (timeout) {
+      state.push({ id, kind, message: humanizeApiMessage(message) });
+      if (timeout > 0) {
         setTimeout(() => {
           const index = state.findIndex((item) => item.id === id);
           if (index !== -1) state.splice(index, 1);
@@ -550,12 +581,13 @@
 
     return {
       list: state,
-      success: (message) => push('success', message),
-      error: (message) => push('error', message),
+      success: (message) => push('success', message, successTimeout),
+      error: (message) => push('error', message, errorTimeout),
       dismiss: (id) => {
         const index = state.findIndex((item) => item.id === id);
         if (index !== -1) state.splice(index, 1);
-      }
+      },
+      clear: () => state.splice(0, state.length)
     };
   }
 

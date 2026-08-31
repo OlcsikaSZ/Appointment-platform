@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-labelledby="t d">
+  <title id="t">Aranyvonal Hair Studio logó</title>
+  <desc id="d">Arany színű AH monogram elegáns, sötét háttéren.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#161412"/>
+      <stop offset="1" stop-color="#2b251f"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f0dbb1"/>
+      <stop offset="0.48" stop-color="#c6a16a"/>
+      <stop offset="1" stop-color="#8e6a3f"/>
+    </linearGradient>
+  </defs>
+  <rect width="240" height="240" rx="54" fill="url(#bg)"/>
+  <rect x="15" y="15" width="210" height="210" rx="45" fill="none" stroke="url(#gold)" stroke-width="2" opacity=".75"/>
+  <path d="M48 166c25-11 37-36 42-74 8 48 25 74 54 78 24 4 40-9 48-39" fill="none" stroke="url(#gold)" stroke-width="7" stroke-linecap="round"/>
+  <path d="M71 153l29-72 30 72M82 126h37M143 82v72M143 119h35M178 82v72" fill="none" stroke="#f7ecd8" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="192" cy="47" r="4" fill="#d4b079"/>
+  <circle cx="205" cy="62" r="2.5" fill="#d4b079" opacity=".7"/>
+</svg>
