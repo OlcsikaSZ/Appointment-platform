@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1100" role="img" aria-labelledby="t d">
+  <title id="t">Elegáns fodrászszalon enteriőr</title>
+  <desc id="d">Modern, sötét tónusú szalon arany részletekkel, tükörrel és fodrászszékkel.</desc>
+  <defs>
+    <linearGradient id="wall" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#26221e"/><stop offset="1" stop-color="#0f0e0d"/>
+    </linearGradient>
+    <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3c332a"/><stop offset="1" stop-color="#181512"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ead6ae"/><stop offset=".55" stop-color="#bd955f"/><stop offset="1" stop-color="#7c5932"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="65%" cy="28%" r="48%">
+      <stop offset="0" stop-color="#f0d6a4" stop-opacity=".3"/><stop offset="1" stop-color="#f0d6a4" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="30" stdDeviation="25" flood-color="#000" flood-opacity=".45"/></filter>
+  </defs>
+  <rect width="1600" height="1100" fill="url(#wall)"/>
+  <rect width="1600" height="1100" fill="url(#glow)"/>
+  <path d="M0 775H1600V1100H0z" fill="url(#floor)"/>
+  <path d="M0 865H1600M0 960H1600" stroke="#8c7257" stroke-opacity=".18" stroke-width="3"/>
+  <g opacity=".22" stroke="#f3e4ca" stroke-width="2"><path d="M190 0v775M400 0v775M610 0v775M820 0v775M1030 0v775M1240 0v775M1450 0v775"/></g>
+  <g filter="url(#shadow)">
+    <rect x="890" y="145" width="470" height="510" rx="235" fill="#171513" stroke="url(#gold)" stroke-width="12"/>
+    <ellipse cx="1125" cy="400" rx="191" ry="210" fill="#29241f"/>
+    <path d="M975 557c74-69 222-70 300 0" fill="none" stroke="#5e5042" stroke-width="3"/>
+  </g>
+  <g filter="url(#shadow)">
+    <path d="M765 685c0-54 43-97 97-97h148c54 0 97 43 97 97v122H765z" fill="#24201d" stroke="#39312a" stroke-width="5"/>
+    <rect x="805" y="537" width="264" height="116" rx="47" fill="#322b26"/>
+    <path d="M883 807h102v88H883z" fill="#171513"/>
+    <ellipse cx="934" cy="919" rx="135" ry="29" fill="#0e0d0c"/>
+    <path d="M845 605c49 28 133 28 179 0" fill="none" stroke="#a98b64" stroke-opacity=".55" stroke-width="4"/>
+  </g>
+  <g transform="translate(174 220)">
+    <rect width="430" height="365" rx="26" fill="#171513" stroke="#4e4236" stroke-width="4"/>
+    <rect x="34" y="34" width="362" height="237" rx="12" fill="#242a27"/>
+    <path d="M64 248c70-104 145-125 212-62 29 27 50 30 90 10v75H64z" fill="#1c211f"/>
+    <circle cx="324" cy="93" r="43" fill="#ddc393" opacity=".24"/>
+    <rect x="92" y="300" width="245" height="18" rx="9" fill="url(#gold)" opacity=".75"/>
+  </g>
+  <g transform="translate(1275 566)">
+    <path d="M50 209c22-80 14-143-23-188 74 26 111 78 111 156 17-51 53-87 109-108-13 83-52 137-117 162" fill="#202a21"/>
+    <path d="M99 208c-3-87-2-144 3-173M139 197c17-59 42-102 77-129M67 191c-10-59-27-106-51-141" fill="none" stroke="#4d664f" stroke-width="10" stroke-linecap="round"/>
+    <path d="M39 206h142l-20 144H58z" fill="#4b4036"/>
+  </g>
+  <g fill="url(#gold)">
+    <rect x="717" y="80" width="5" height="235" rx="3"/><circle cx="719" cy="329" r="34"/>
+    <rect x="1450" y="70" width="5" height="245" rx="3"/><circle cx="1452" cy="329" r="27"/>
+  </g>
+  <g opacity=".82">
+    <rect x="128" y="692" width="375" height="22" rx="11" fill="#b38d5d"/>
+    <rect x="183" y="714" width="18" height="112" fill="#332a23"/>
+    <rect x="430" y="714" width="18" height="112" fill="#332a23"/>
+    <circle cx="282" cy="674" r="30" fill="#d7c3a0"/>
+    <rect x="320" y="625" width="45" height="69" rx="7" fill="#3e332b"/>
+    <rect x="372" y="650" width="30" height="44" rx="5" fill="#927044"/>
+  </g>
+</svg>

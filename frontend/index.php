@@ -11,7 +11,7 @@ function apply_security_headers(): void
     header('X-Frame-Options: SAMEORIGIN');
     header('Referrer-Policy: strict-origin-when-cross-origin');
     header('Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()');
-    header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'");
+    header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self'; frame-src 'self' https://www.youtube-nocookie.com https://www.youtube.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'");
 
     $forwardedProto = strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? ''));
     $https = (! empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off') || $forwardedProto === 'https';
@@ -46,6 +46,7 @@ function route_url(string $route = 'main'): string
         'admin' => '/admin',
         'manage' => '/manage',
         'account' => '/fiokom',
+        'showcase' => '/bemutato',
         'privacy' => '/adatkezeles',
         'terms' => '/felhasznalasi-feltetelek',
         'imprint' => '/impresszum',
@@ -76,6 +77,7 @@ $viewRoutes = [
     '/manage.php' => 'manage',
     '/manage.html' => 'manage',
     '/fiokom' => 'account',
+    '/bemutato' => 'bemutato',
     '/adatkezeles' => 'legal',
     '/felhasznalasi-feltetelek' => 'legal',
     '/impresszum' => 'legal',

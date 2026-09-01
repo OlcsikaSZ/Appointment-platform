@@ -113,6 +113,7 @@ The data model and API isolate resources by business. The current frontend serve
 | Interface | Route | Purpose |
 |---|---|---|
 | Public page | `/` | Business presentation, services, and booking |
+| Sales showcase | `/bemutato` | Olcsi Business landing page, product overview, and live demo CTA |
 | Customer account | `/fiokom` | Login, registration, bookings, and profile |
 | Booking management | `/manage?token=...` | Cancellation, rescheduling, and calendar export |
 | Administration | `/admin` | Complete business and booking management |

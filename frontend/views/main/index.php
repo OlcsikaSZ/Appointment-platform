@@ -57,6 +57,7 @@
       </div>
 
       <aside class="hero-card">
+        <div class="aranyvonal-hero-visual" aria-hidden="true"></div>
         <div class="hero-logo-large business-logo-mark">
           <img v-if="business.logoUrl" :src="business.logoThumbnailUrl || business.logoUrl" :alt="business.name ? business.name + ' logó' : 'Vállalkozás logó'" />
           <template v-else>{{ business.logoText || monogram(business.name) || 'IP' }}</template>

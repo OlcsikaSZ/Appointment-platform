@@ -248,6 +248,7 @@ createApp({
       deep: true,
       handler(value) {
         setBusinessFavicon(value);
+        this.syncBusinessTheme(value);
       }
     }
   },
@@ -281,6 +282,7 @@ createApp({
     window.removeEventListener('storage', this.handleCustomerStorage);
     document.removeEventListener('visibilitychange', this.handleCustomerVisibility);
     document.body.classList.remove('modal-open');
+    document.body.classList.remove('aranyvonal-theme');
   },
 
   methods: {
@@ -289,6 +291,11 @@ createApp({
 
     priceLabel(service) {
       return servicePriceLabel(service, !!this.business.hidePrices);
+    },
+
+    syncBusinessTheme(business = {}) {
+      const isAranyvonal = String(business.name || '').trim().toLocaleLowerCase('hu-HU') === 'aranyvonal hair studio';
+      document.body.classList.toggle('aranyvonal-theme', isAranyvonal);
     },
 
     openPublicReviewForm() {

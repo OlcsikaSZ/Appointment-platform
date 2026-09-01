@@ -446,3 +446,243 @@ body.modal-open { overflow: hidden; }
   .public-hour-row { grid-template-columns: 50px 1fr; }
   .public-quarter-slot strong { font-size: 9px; }
 }
+
+/* =========================================================
+   Aranyvonal Hair Studio — publikus demo arculat
+   A téma csak a fiktív Aranyvonal demón aktiválódik JS-ből,
+   így más ügyfélpéldányok megtartják az alap designt.
+   ========================================================= */
+body.aranyvonal-theme {
+  --ink: #191713;
+  --ink-soft: #4a433b;
+  --paper: #f4efe7;
+  --paper-raised: #fffaf2;
+  --paper-sunken: #e9dfd1;
+  --line: #dfd2bf;
+  --line-strong: #c9b89f;
+  --amber: #b58a4a;
+  --amber-ink: #684719;
+  --amber-soft: #f1dfc2;
+  --muted: #746a5e;
+  --shadow-sm: 0 6px 20px rgba(35, 29, 23, .07);
+  --shadow-md: 0 18px 46px rgba(35, 29, 23, .12);
+  --shadow-lg: 0 30px 72px rgba(22, 18, 14, .18);
+  background:
+    radial-gradient(circle at 7% 2%, rgba(181, 138, 74, .14), transparent 34rem),
+    radial-gradient(circle at 98% 12%, rgba(75, 61, 47, .08), transparent 30rem),
+    linear-gradient(180deg, #f8f3eb 0%, #f1eadf 100%);
+}
+
+body.aranyvonal-theme .public-topbar {
+  margin-top: 14px;
+  padding: 11px 14px;
+  border: 1px solid rgba(201,184,159,.78);
+  border-radius: 18px;
+  background: rgba(255,250,242,.84);
+  box-shadow: 0 14px 38px rgba(40,32,24,.07);
+  backdrop-filter: blur(16px);
+}
+body.aranyvonal-theme .brand-mark,
+body.aranyvonal-theme .hero-logo-large {
+  background: #191713;
+  border: 1px solid rgba(181,138,74,.55);
+}
+body.aranyvonal-theme .brand-mark img,
+body.aranyvonal-theme .hero-logo-large img { background: transparent; object-fit: cover; }
+body.aranyvonal-theme .brand strong { letter-spacing: .015em; }
+body.aranyvonal-theme .public-nav .nav-cta {
+  background: #191713;
+  border-color: #191713;
+  color: #fff8ec;
+  box-shadow: 0 7px 18px rgba(25,23,19,.14);
+}
+
+body.aranyvonal-theme .hero-section {
+  grid-template-columns: minmax(0, .94fr) minmax(440px, 1.06fr);
+  gap: 18px;
+  padding-top: 28px;
+  padding-bottom: 44px;
+}
+body.aranyvonal-theme .hero-copy {
+  min-height: 620px;
+  padding: clamp(38px, 5.4vw, 72px);
+  border-color: rgba(201,184,159,.86);
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at 88% 16%, rgba(181,138,74,.18), transparent 20rem),
+    linear-gradient(150deg, rgba(255,251,244,.98), rgba(239,229,214,.96));
+  box-shadow: 0 24px 60px rgba(58,45,31,.11);
+  overflow: hidden;
+  position: relative;
+}
+body.aranyvonal-theme .hero-copy::after {
+  content: '';
+  position: absolute;
+  width: 240px;
+  height: 240px;
+  right: -80px;
+  bottom: -110px;
+  border: 1px solid rgba(181,138,74,.26);
+  border-radius: 50%;
+  box-shadow: 0 0 0 28px rgba(181,138,74,.05), 0 0 0 62px rgba(181,138,74,.025);
+  pointer-events: none;
+}
+body.aranyvonal-theme .hero-copy .eyebrow { color: #8c6636; letter-spacing: .13em; }
+body.aranyvonal-theme .hero-copy h1 {
+  max-width: 10.8ch;
+  margin-top: 8px;
+  font-size: clamp(50px, 6.2vw, 82px);
+  line-height: .98;
+  letter-spacing: -.035em;
+}
+body.aranyvonal-theme .hero-lead { max-width: 48ch; color: #62584c; }
+body.aranyvonal-theme .hero-actions .button.primary {
+  background: #191713;
+  border-color: #191713;
+  color: #fff8ed;
+  box-shadow: 0 9px 24px rgba(25,23,19,.16);
+}
+body.aranyvonal-theme .hero-actions .button:not(.primary) {
+  border-color: #c5ad8c;
+  background: rgba(255,250,242,.75);
+}
+body.aranyvonal-theme .trust-row { color: #5f5448; }
+body.aranyvonal-theme .trust-row span::first-letter { color: #9f7541; }
+
+body.aranyvonal-theme .hero-card {
+  position: relative;
+  min-height: 620px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr);
+  grid-template-rows: minmax(300px, 1fr) auto auto;
+  gap: 0 18px;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(181,138,74,.38);
+  border-radius: 30px;
+  background: #171513;
+  box-shadow: 0 28px 64px rgba(22,18,14,.22);
+}
+body.aranyvonal-theme .aranyvonal-hero-visual {
+  display: block;
+  grid-column: 1 / -1;
+  min-height: 345px;
+  align-self: stretch;
+  background:
+    linear-gradient(180deg, transparent 63%, rgba(23,21,19,.32) 100%),
+    url('../../assets/brand/aranyvonal/hero.svg') center 49% / cover no-repeat;
+  border-bottom: 1px solid rgba(229,207,172,.16);
+}
+body:not(.aranyvonal-theme) .aranyvonal-hero-visual { display: none; }
+body.aranyvonal-theme .hero-logo-large {
+  width: 66px;
+  height: 66px;
+  margin: 22px 0 0 24px;
+  border-radius: 18px;
+  align-self: start;
+}
+body.aranyvonal-theme .hero-card > div:nth-of-type(3) {
+  margin: 20px 24px 0 0;
+  align-self: start;
+}
+body.aranyvonal-theme .hero-card > div:nth-of-type(3) h2 {
+  max-width: 16ch;
+  font-size: clamp(25px, 3vw, 36px);
+  line-height: 1.06;
+}
+body.aranyvonal-theme .hero-contact-list {
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap: 0;
+  margin: 20px 24px 24px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255,255,255,.13);
+}
+body.aranyvonal-theme .hero-contact-list div {
+  min-width: 0;
+  padding: 0 16px;
+  border-top: 0;
+  border-right: 1px solid rgba(255,255,255,.12);
+}
+body.aranyvonal-theme .hero-contact-list div:first-child { padding-left: 0; }
+body.aranyvonal-theme .hero-contact-list div:last-child { border-right: 0; }
+body.aranyvonal-theme .hero-contact-list dd { overflow-wrap: anywhere; }
+
+body.aranyvonal-theme .booking-section > .panel {
+  border-color: rgba(201,184,159,.82);
+  border-radius: 26px;
+  background: rgba(255,250,242,.92);
+  box-shadow: 0 22px 56px rgba(57,45,32,.09);
+}
+body.aranyvonal-theme .service-grid { gap: 16px; }
+body.aranyvonal-theme .service-card-with-image {
+  min-height: 318px;
+  padding: 10px 10px 18px;
+  border-color: rgba(201,184,159,.72);
+  border-radius: 18px;
+  background: #fffaf2;
+  box-shadow: 0 9px 26px rgba(51,40,28,.07);
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+}
+body.aranyvonal-theme .service-card-with-image:hover {
+  transform: translateY(-4px);
+  border-color: #b58a4a;
+  box-shadow: 0 18px 36px rgba(51,40,28,.13);
+}
+body.aranyvonal-theme .service-card-with-image.selected {
+  border-color: #9b7040;
+  box-shadow: 0 0 0 2px rgba(181,138,74,.22), 0 18px 36px rgba(51,40,28,.11);
+}
+body.aranyvonal-theme .service-image { height: 156px; border-radius: 13px; background: #ede2d2; }
+body.aranyvonal-theme .service-card-with-image .cat { margin-top: 15px; color: #92703f; letter-spacing: .08em; }
+body.aranyvonal-theme .service-card-with-image .name { font-family: var(--font-display); font-size: 20px; }
+body.aranyvonal-theme .service-card-with-image .price { color: #79552e; }
+body.aranyvonal-theme .service-card-with-image .check { top: 20px; right: 20px; background: #fffaf2; }
+
+body.aranyvonal-theme .public-month-day:not(.disabled):hover,
+body.aranyvonal-theme .public-quarter-slot:not([disabled]):hover { border-color: #a77b45; }
+body.aranyvonal-theme .public-month-day.today .public-month-day-number,
+body.aranyvonal-theme .public-quarter-slot.selected,
+body.aranyvonal-theme .chip.selected { background: #191713; color: #fff8ec; }
+body.aranyvonal-theme .review-card,
+body.aranyvonal-theme .faq-item,
+body.aranyvonal-theme .section-heading { background: rgba(255,250,242,.9); border-color: rgba(201,184,159,.76); }
+body.aranyvonal-theme .contact-card { background: linear-gradient(145deg, #1b1916, #2c251e); border: 1px solid rgba(181,138,74,.34); }
+body.aranyvonal-theme .site-footer { background: rgba(247,240,230,.88); border-color: rgba(201,184,159,.72); }
+
+@media (min-width: 901px) and (max-width: 1120px) {
+  body.aranyvonal-theme .hero-section { grid-template-columns:minmax(0,.94fr) minmax(410px,1.06fr); }
+  body.aranyvonal-theme .hero-copy,
+  body.aranyvonal-theme .hero-card { min-height:560px; }
+  body.aranyvonal-theme .hero-copy { padding:clamp(34px,4.5vw,52px); }
+  body.aranyvonal-theme .hero-copy h1 { max-width:11.5ch; font-size:clamp(46px,5.4vw,64px); }
+  body.aranyvonal-theme .aranyvonal-hero-visual { min-height:310px; }
+}
+
+@media (max-width: 900px) {
+  body.aranyvonal-theme .hero-section { grid-template-columns: 1fr; }
+  body.aranyvonal-theme .hero-copy { min-height: auto; }
+  body.aranyvonal-theme .hero-copy h1 { max-width: 12ch; }
+  body.aranyvonal-theme .hero-card { min-height: 590px; }
+}
+
+@media (max-width: 760px) {
+  body.aranyvonal-theme .public-topbar { margin-top: 8px; padding: 9px 10px; border-radius: 15px; }
+  body.aranyvonal-theme .hero-section { padding-top: 14px; gap: 14px; }
+  body.aranyvonal-theme .hero-copy { padding: 34px 23px; border-radius: 23px; }
+  body.aranyvonal-theme .hero-copy h1 { font-size: clamp(42px, 12vw, 58px); }
+  body.aranyvonal-theme .hero-card {
+    min-height: auto;
+    grid-template-columns: 72px minmax(0,1fr);
+    grid-template-rows: 250px auto auto;
+    border-radius: 23px;
+  }
+  body.aranyvonal-theme .aranyvonal-hero-visual { min-height: 250px; }
+  body.aranyvonal-theme .hero-logo-large { width: 58px; height: 58px; margin: 18px 0 0 18px; }
+  body.aranyvonal-theme .hero-card > div:nth-of-type(3) { margin: 18px 18px 0 0; }
+  body.aranyvonal-theme .hero-contact-list { grid-template-columns: 1fr; margin: 16px 18px 20px; padding-top: 14px; }
+  body.aranyvonal-theme .hero-contact-list div { padding: 9px 0; border-right: 0; border-bottom: 1px solid rgba(255,255,255,.1); }
+  body.aranyvonal-theme .hero-contact-list div:last-child { border-bottom: 0; }
+  body.aranyvonal-theme .service-image { height: 170px; }
+}

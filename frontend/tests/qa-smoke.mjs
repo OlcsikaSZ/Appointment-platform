@@ -20,11 +20,16 @@ for (const [label, css] of [['global', globalCss], ['main', mainCss], ['admin', 
   assert(/@media\s*\(max-width:\s*360px\)/.test(css), `${label}: hiányzik a 360px breakpoint`);
 }
 
-for (const view of ['views/main/index.php', 'views/admin/index.php', 'views/manage/index.php', 'views/legal/index.php', 'views/account/index.php']) {
+for (const view of ['views/main/index.php', 'views/manage/index.php', 'views/legal/index.php', 'views/account/index.php']) {
   const html = read(view);
   assert(html.includes('class="toast-stack" aria-live="polite" aria-atomic="false"'), `${view}: hiányzik az aria-live toast régió`);
   assert(html.includes(':role="toast.kind === \'error\' ? \'alert\' : \'status\'"'), `${view}: a toastoknak nincs dinamikus ARIA szerepe`);
 }
+
+const adminFeedbackHtml = read('views/admin/index.php');
+assert(adminFeedbackHtml.includes('class="feedback-modal"'), 'admin: hiányzik az egységes visszajelző modal');
+assert(adminFeedbackHtml.includes('aria-live="polite"'), 'admin: a visszajelző modal nincs aria-live régióként bejelentve');
+assert(adminFeedbackHtml.includes("'alertdialog' : 'status'"), 'admin: a visszajelző modal ARIA szerepe nem dinamikus');
 
 const adminJs = read('views/admin/index.js');
 assert(adminJs.includes("event.key === 'Tab'"), 'admin: nincs Tab fókuszcsapda');

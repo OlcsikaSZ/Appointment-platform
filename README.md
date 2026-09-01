@@ -123,6 +123,7 @@ Az adatmodell és az API vállalkozásonként szeparált. A jelenlegi frontend e
 | Felület | Útvonal | Cél |
 |---|---|---|
 | Nyilvános oldal | `/` | Bemutatkozás, szolgáltatások és foglalás |
+| Értékesítési bemutató | `/bemutato` | Olcsi Business landing oldal, termékbemutató és élő demo CTA |
 | Ügyfélfiók | `/fiokom` | Belépés, regisztráció, foglalások és profil |
 | Foglaláskezelés | `/manage?token=...` | Lemondás, áthelyezés és naptárba mentés |
 | Admin | `/admin` | Teljes vállalkozás- és foglaláskezelés |

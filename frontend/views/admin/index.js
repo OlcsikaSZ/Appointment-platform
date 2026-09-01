@@ -274,7 +274,7 @@ createApp({
       },
       reviewForm: { id: null, author: '', text: '', rating: 5, active: true, sort_order: 0 },
       faqForm: { id: null, question: '', answer: '', active: true, sort_order: 0 },
-      toasts: useToasts(reactive)
+      toasts: useToasts(reactive, { single: true, successTimeout: 3600, errorTimeout: 0 })
     };
   },
 
