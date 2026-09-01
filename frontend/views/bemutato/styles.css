@@ -866,3 +866,167 @@
   .sales-mobile-showcase-copy h3,
   .sales-backoffice-heading h3 { font-size: clamp(28px, 8.2vw, 34px); }
 }
+
+/* Video section – intermediate/mobile width fix */
+@media (max-width: 760px) {
+  .sales-video-grid {
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: 28px;
+  }
+
+  .sales-video-copy {
+    width: 100%;
+    max-width: none;
+  }
+
+  .sales-video-copy h2 {
+    width: 100%;
+    max-width: none;
+    font-size: clamp(2rem, 7vw, 3rem);
+    line-height: 1;
+    text-wrap: balance;
+  }
+
+  .sales-video-frame {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/* ------------------------------------------------------------------
+   Bemutato – tablet / intermediate responsive typography polish
+   Cél: 820 px környékén ne törjön rondán a nagy szöveg
+------------------------------------------------------------------- */
+
+@media (max-width: 920px) {
+  .sales-hero-copy,
+  .sales-video-copy,
+  .sales-fit-grid > :first-child,
+  .sales-owner-panel > :first-child,
+  .sales-final-card > :first-child,
+  .sales-partner-card > div {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .sales-hero h1,
+  .sales-section-heading h2,
+  .sales-showcase-copy h3,
+  .sales-showcase-card h3,
+  .sales-mobile-showcase h3,
+  .sales-backoffice-heading h3,
+  .sales-feature-card h3,
+  .sales-fit-grid h2,
+  .sales-video-copy h2,
+  .sales-owner-panel h3,
+  .sales-final-card h2,
+  .sales-partner-card h2 {
+    max-width: none;
+    text-wrap: balance;
+  }
+
+  .sales-video-grid {
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: 28px;
+  }
+
+  .sales-video-copy {
+    max-width: 760px;
+  }
+
+  .sales-video-copy h2 {
+    max-width: 15ch;
+    font-size: clamp(2.35rem, 5vw, 3.35rem);
+    line-height: 1.02;
+  }
+
+  .sales-fit-grid h2 {
+    max-width: 13ch;
+    font-size: clamp(2.2rem, 4.7vw, 3.15rem);
+    line-height: 1.04;
+  }
+
+  .sales-owner-panel h3 {
+    max-width: 16ch;
+    font-size: clamp(2rem, 4.3vw, 2.9rem);
+    line-height: 1.04;
+  }
+
+  .sales-final-card h2 {
+    max-width: 14ch;
+    font-size: clamp(2.2rem, 4.8vw, 3.2rem);
+    line-height: 1.03;
+  }
+
+  .sales-partner-card h2 {
+    max-width: 18ch;
+    line-height: 1.08;
+  }
+
+  .sales-feature-card h3,
+  .sales-showcase-copy h3,
+  .sales-showcase-card h3,
+  .sales-mobile-showcase h3,
+  .sales-backoffice-heading h3 {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 820px) {
+  .sales-hero h1 {
+    max-width: 11ch;
+    font-size: clamp(2.7rem, 8vw, 4rem);
+    line-height: 0.98;
+  }
+
+  .sales-video-copy,
+  .sales-fit-grid > :first-child {
+    max-width: none;
+  }
+
+  .sales-video-copy h2,
+  .sales-fit-grid h2,
+  .sales-owner-panel h3,
+  .sales-final-card h2,
+  .sales-partner-card h2 {
+    max-width: 100%;
+  }
+}
+
+/* ------------------------------------------------------------
+   Bemutato – extra mobile hero typography polish
+   Cél: 430 px környékén szebb tördelés a hero blokkban
+------------------------------------------------------------- */
+
+@media (max-width: 480px) {
+  .sales-hero-copy,
+  .sales-hero-text {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .sales-hero h1 {
+    max-width: 12ch;
+    font-size: clamp(2.65rem, 10vw, 3.35rem);
+    line-height: 0.98;
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+    margin-bottom: 18px;
+  }
+
+  .sales-hero-copy > p:not(.sales-kicker),
+  .sales-hero-copy .sales-lead,
+  .sales-hero-copy .sales-intro {
+    max-width: 100%;
+    font-size: 1rem;
+    line-height: 1.6;
+    text-wrap: pretty;
+  }
+
+  .sales-kicker {
+    line-height: 1.35;
+    word-break: normal;
+  }
+}
