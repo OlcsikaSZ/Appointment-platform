@@ -22,7 +22,11 @@ assert.match(html, /Referencia partner program/);
 assert.match(html, /sales-audience-list/);
 assert.match(html, /Szépség &amp; megjelenés/);
 assert.doesNotMatch(html, /sales-professions/);
-assert.match(html, /\$videoEmbedUrl\s*=\s*''/);
+assert.doesNotMatch(html, /\$videoEmbedUrl\s*=\s*''/);
+assert.match(
+  html,
+  /https:\/\/www\.youtube-nocookie\.com\/embed\/N5YuxQ5z-B4/
+);
 assert.match(html, /assets\/sales\/screenshots/);
 assert.match(html, /is_file\(\$screenshotBase\.\$item\['file'\]\)/);
 assert.match(css, /sales-device-phone/);

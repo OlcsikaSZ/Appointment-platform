@@ -45,7 +45,7 @@ $contactHref = 'mailto:'.$contactEmail.'?subject='.rawurlencode('DEMÓ – Olcsi
 // A videó felvétele után ide elég beilleszteni a YouTube embed URL-t,
 // például: https://www.youtube-nocookie.com/embed/VIDEO_ID
 // Üresen hagyva a videós blokk nem jelenik meg.
-$videoEmbedUrl = '';
+$videoEmbedUrl = 'https://www.youtube-nocookie.com/embed/N5YuxQ5z-B4?rel=0&playsinline=1';
 $hasVideo = trim($videoEmbedUrl) !== '';
 
 function sales_screenshot_src(array $item): string
@@ -88,7 +88,7 @@ function sales_screenshot_src(array $item): string
       </a>
 
       <nav class="sales-nav" aria-label="Bemutató navigáció">
-        <a href="#mit-kapsz">Mit kapsz?</a>
+        <?php if ($hasVideo): ?><a href="#video">Videó</a><?php endif; ?>
         <?php if ($hasScreenshots): ?><a href="#kepernyokepek">Képernyőképek</a><?php endif; ?>
         <a href="#hogyan-mukodik">Hogyan működik?</a>
         <a class="sales-nav-cta" href="<?= htmlspecialchars($demoUrl, ENT_QUOTES) ?>">Élő demo</a>
@@ -339,9 +339,8 @@ function sales_screenshot_src(array $item): string
       <section class="sales-section sales-video-section" id="video">
         <div class="sales-wrap sales-video-grid">
           <div class="sales-video-copy" data-reveal>
-            <p class="sales-kicker">Kb. 45 másodperc</p>
+            <p class="sales-kicker">Kb. 1 perc</p>
             <h2>Nézd meg, hogyan jut el a vendég a szolgáltatástól a lefoglalt időpontig.</h2>
-            <p>Rövid bemutató a publikus foglalási folyamatról és az adminoldal legfontosabb részeiről.</p>
           </div>
           <div class="sales-video-frame" data-reveal>
             <iframe src="<?= htmlspecialchars($videoEmbedUrl, ENT_QUOTES) ?>" title="Olcsi Business időpontfoglaló bemutató videó" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
