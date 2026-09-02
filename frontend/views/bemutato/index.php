@@ -342,8 +342,22 @@ function sales_screenshot_src(array $item): string
             <p class="sales-kicker">Kb. 1 perc</p>
             <h2>Nézd meg, hogyan jut el a vendég a szolgáltatástól a lefoglalt időpontig.</h2>
           </div>
-          <div class="sales-video-frame" data-reveal>
-            <iframe src="<?= htmlspecialchars($videoEmbedUrl, ENT_QUOTES) ?>" title="Olcsi Business időpontfoglaló bemutató videó" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+          <div
+            class="sales-video-frame sales-video-consent"
+            data-video-url="<?= htmlspecialchars($videoEmbedUrl, ENT_QUOTES) ?>"
+            data-reveal
+          >
+            <img
+              class="sales-video-preview"
+              src="<?= asset('assets/sales/screenshots/01-home.webp') ?>"
+              alt=""
+              loading="lazy"
+              decoding="async"
+            />
+            <div class="sales-video-consent-content">
+              <strong>Bemutató videó</strong>
+              <button type="button" class="sales-video-load">Videó betöltése</button>
+            </div>
           </div>
         </div>
       </section>

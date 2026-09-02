@@ -42,11 +42,11 @@ function asset(string $path): string
 function route_url(string $route = 'main'): string
 {
     $routes = [
-        'main' => '/',
+        'main' => '/demo',
         'admin' => '/admin',
         'manage' => '/manage',
         'account' => '/fiokom',
-        'showcase' => '/bemutato',
+        'showcase' => '/',
         'privacy' => '/adatkezeles',
         'terms' => '/felhasznalasi-feltetelek',
         'imprint' => '/impresszum',
@@ -67,9 +67,16 @@ $requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 $relativePath = '/'.ltrim(substr($requestPath, strlen(app_base())), '/');
 $relativePath = rtrim($relativePath, '/') ?: '/';
 
+// A korábbi értékesítési URL maradjon működőképes, de a kanonikus cím mostantól a gyökér.
+if ($relativePath === '/bemutato') {
+    header('Location: '.route_url('showcase'), true, 301);
+    exit;
+}
+
 $viewRoutes = [
-    '/' => 'main',
-    '/index.php' => 'main',
+    '/' => 'bemutato',
+    '/index.php' => 'bemutato',
+    '/demo' => 'main',
     '/admin' => 'admin',
     '/admin.php' => 'admin',
     '/admin.html' => 'admin',
@@ -77,7 +84,6 @@ $viewRoutes = [
     '/manage.php' => 'manage',
     '/manage.html' => 'manage',
     '/fiokom' => 'account',
-    '/bemutato' => 'bemutato',
     '/adatkezeles' => 'legal',
     '/felhasznalasi-feltetelek' => 'legal',
     '/impresszum' => 'legal',

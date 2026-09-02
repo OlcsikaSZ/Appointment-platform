@@ -10,6 +10,26 @@
     window.addEventListener('scroll', updateHeader, { passive: true });
   }
 
+  const videoFrame = document.querySelector('.sales-video-consent');
+
+  if (videoFrame) {
+    const loadButton = videoFrame.querySelector('.sales-video-load');
+
+    loadButton?.addEventListener('click', () => {
+      const videoUrl = videoFrame.dataset.videoUrl;
+      if (!videoUrl) return;
+
+      const iframe = document.createElement('iframe');
+      iframe.src = videoUrl;
+      iframe.title = 'Olcsi Business időpontfoglaló bemutató videó';
+      iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+      iframe.allowFullscreen = true;
+      iframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+
+      videoFrame.replaceChildren(iframe);
+    });
+  }
+
   const revealItems = [...document.querySelectorAll('[data-reveal]')];
   if (!revealItems.length) return;
 

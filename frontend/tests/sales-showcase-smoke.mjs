@@ -12,8 +12,11 @@ const js = fs.readFileSync(path.join(root, 'frontend', 'views', 'bemutato', 'ind
 const assetReadme = fs.readFileSync(path.join(root, 'frontend', 'assets', 'sales', 'screenshots', 'README.md'), 'utf8');
 const screenshotsDir = path.join(root, 'frontend', 'assets', 'sales', 'screenshots');
 
-assert.match(router, /'showcase'\s*=>\s*'\/bemutato'/);
-assert.match(router, /'\/bemutato'\s*=>\s*'bemutato'/);
+assert.match(router, /'main'\s*=>\s*'\/demo'/);
+assert.match(router, /'showcase'\s*=>\s*'\/'/);
+assert.match(router, /'\/'\s*=>\s*'bemutato'/);
+assert.match(router, /'\/demo'\s*=>\s*'main'/);
+assert.match(router, /\$relativePath === '\/bemutato'/);
 assert.match(html, /Olcsi Business/);
 assert.match(html, /Élő demo kipróbálása/);
 assert.match(html, /Írj egy „DEMÓ” üzenetet/);
@@ -27,6 +30,12 @@ assert.match(
   html,
   /https:\/\/www\.youtube-nocookie\.com\/embed\/N5YuxQ5z-B4/
 );
+assert.match(html, /sales-video-consent/);
+assert.match(html, /Videó betöltése/);
+assert.doesNotMatch(html, /<iframe\b/i);
+assert.match(js, /querySelector\('\.sales-video-consent'\)/);
+assert.match(js, /document\.createElement\('iframe'\)/);
+assert.match(js, /replaceChildren\(iframe\)/);
 assert.match(html, /assets\/sales\/screenshots/);
 assert.match(html, /is_file\(\$screenshotBase\.\$item\['file'\]\)/);
 assert.match(css, /sales-device-phone/);
