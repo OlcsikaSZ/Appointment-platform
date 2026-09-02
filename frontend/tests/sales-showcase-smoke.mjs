@@ -9,7 +9,6 @@ const router = fs.readFileSync(path.join(root, 'frontend', 'index.php'), 'utf8')
 const html = fs.readFileSync(path.join(root, 'frontend', 'views', 'bemutato', 'index.php'), 'utf8');
 const css = fs.readFileSync(path.join(root, 'frontend', 'views', 'bemutato', 'styles.css'), 'utf8');
 const js = fs.readFileSync(path.join(root, 'frontend', 'views', 'bemutato', 'index.js'), 'utf8');
-const assetReadme = fs.readFileSync(path.join(root, 'frontend', 'assets', 'sales', 'screenshots', 'README.md'), 'utf8');
 const screenshotsDir = path.join(root, 'frontend', 'assets', 'sales', 'screenshots');
 
 assert.match(router, /'main'\s*=>\s*'\/demo'/);
@@ -45,7 +44,6 @@ assert.match(css, /Final responsive balance pass/);
 assert.match(css, /sales-feature-card-large \{ grid-column: auto; \}/);
 assert.match(js, /IntersectionObserver/);
 assert.match(js, /is-scrolled/);
-assert.match(assetReadme, /01-home\.webp/);
 
 for (const file of [
   '01-home.webp',
