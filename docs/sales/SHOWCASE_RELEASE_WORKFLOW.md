@@ -55,10 +55,12 @@ $videoEmbedUrl = 'https://www.youtube-nocookie.com/embed/VIDEO_ID';
 A végleges QR célja:
 
 ```text
-https://olcsikaszbusiness.hu/bemutato
+https://olcsikaszbusiness.hu/
 ```
 
-A QR publikus, optimalizált SVG/PNG változata mehet Gitre. A nagy forrásfájl vagy szerkesztőprojekt maradjon a `marketing-source/` alatt.
+A QR publikus, optimalizált PNG változata mehet Gitre. A nagy forrásfájl vagy szerkesztőprojekt maradjon a `marketing-source/` alatt.
+
+Az élő Aranyvonal demo címe: `https://olcsikaszbusiness.hu/demo`. A korábbi `/bemutato` URL csak kompatibilitási átirányításként marad meg.
 
 ## 5. Release gate
 
@@ -69,7 +71,7 @@ A `main` merge előtt:
 - videó betöltődik desktopon és mobilon,
 - minden CTA működik,
 - nincs `localhost` vagy fejlesztői adat,
-- a QR a `/bemutato` oldalra mutat,
+- a QR az Olcsi Business főoldalára (`/`) mutat,
 - frontend smoke tesztek PASS,
 - backend tesztek PASS,
 - repository hygiene PASS,

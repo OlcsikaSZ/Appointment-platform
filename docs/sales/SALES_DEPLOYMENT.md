@@ -1,8 +1,8 @@
 # Értékesítési oldal, Git és production szabályok
 
-## `/bemutato`
+## Értékesítési főoldal (`/`)
 
-A `/bemutato` egy publikus értékesítési landing oldal. Forráskódja a repository része, ezért:
+A `/` egy publikus Olcsi Business értékesítési landing oldal. Forráskódja a repository része, ezért:
 
 - **GitHubra kerül**;
 - a normál production deploy részeként **felkerül az `olcsikaszbusiness.hu` szerverre**;
@@ -11,7 +11,7 @@ A `/bemutato` egy publikus értékesítési landing oldal. Forráskódja a repos
 Production célútvonal:
 
 ```text
-https://olcsikaszbusiness.hu/bemutato
+https://olcsikaszbusiness.hu/
 ```
 
 Az oldal elsődleges feladata, hogy elmagyarázza a terméket, majd az élő demóra vagy kapcsolatfelvételre vezesse az érdeklődőt.
@@ -20,7 +20,7 @@ Az oldal elsődleges feladata, hogy elmagyarázza a terméket, majd az élő dem
 
 Igen:
 
-- `/bemutato` PHP/CSS/JS forráskód;
+- az értékesítési főoldal (`/`) PHP/CSS/JS forráskódja;
 - értékesítési dokumentáció;
 - később a biztonságos demo-seeder/parancs forráskódja;
 - végleges, optimalizált, személyes adatot nem tartalmazó marketing screenshotok;
@@ -69,12 +69,12 @@ Valódi ügyfél adatbázisán demo-seedert nem futtatunk.
 A végleges QR-kód célja:
 
 ```text
-https://olcsikaszbusiness.hu/bemutato
+https://olcsikaszbusiness.hu/
 ```
 
 Nem közvetlenül a demóra mutat. Így a nyomtatott QR később is használható akkor is, ha az élő demo címe megváltozik.
 
-A `/bemutato` oldalról külön gomb vezet az élő demóra.
+Az értékesítési főoldalról külön gomb vezet az élő demóra: `https://olcsikaszbusiness.hu/demo`. A korábbi `/bemutato` cím 301-es átirányítással a főoldalra vezet.
 
 ## Videó
 
@@ -84,19 +84,19 @@ Javasolt folyamat:
 
 1. master videó lokálisan / privát felhőben;
 2. kész videó publikálása YouTube-on vagy megfelelő videóplatformon;
-3. a `/bemutato` oldalba beágyazott vagy linkelt verzió;
+3. az értékesítési főoldalba (`/`) kattintás után betöltött, privacy-enhanced YouTube embed;
 4. külön natív feltöltés Facebookra / Instagramra, ha hirdetésként is használjuk.
 
 ## Rövid döntési tábla
 
 | Elem | Git | Production | Local / privát |
 |---|---:|---:|---:|
-| `/bemutato` forrás | ✓ | ✓ | ✓ |
+| Értékesítési főoldal (`/`) forrás | ✓ | ✓ | ✓ |
 | Demo-seeder forrás | ✓ | ✓ | ✓ |
 | Demo DB adatok | ✗ | csak demo DB-ben | ✓ először |
 | SQL dump | ✗ | ✗ | ✓ |
 | Optimalizált marketing screenshot | ✓ | ✓ | ✓ |
 | Nyers screenshot | ✗ | ✗ | ✓ |
-| QR-kód végleges PNG/SVG | ✓ | ✓ | ✓ |
+| QR-kód végleges PNG | ✓ | ✓ | ✓ |
 | Videó master | ✗ | ✗ | ✓ |
 | Publikált videó | ✗ fájlként | embed/link | ✓ master |

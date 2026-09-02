@@ -27,7 +27,7 @@ assert.doesNotMatch(html, /sales-professions/);
 assert.doesNotMatch(html, /\$videoEmbedUrl\s*=\s*''/);
 assert.match(
   html,
-  /https:\/\/www\.youtube-nocookie\.com\/embed\/N5YuxQ5z-B4/
+  /https:\/\/www\.youtube-nocookie\.com\/embed\/D5ng5-1SB_Y/
 );
 assert.match(html, /sales-video-consent/);
 assert.match(html, /Videó betöltése/);

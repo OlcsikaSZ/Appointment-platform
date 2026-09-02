@@ -45,7 +45,7 @@ $contactHref = 'mailto:'.$contactEmail.'?subject='.rawurlencode('DEMÓ – Olcsi
 // A videó felvétele után ide elég beilleszteni a YouTube embed URL-t,
 // például: https://www.youtube-nocookie.com/embed/VIDEO_ID
 // Üresen hagyva a videós blokk nem jelenik meg.
-$videoEmbedUrl = 'https://www.youtube-nocookie.com/embed/N5YuxQ5z-B4?rel=0&playsinline=1';
+$videoEmbedUrl = 'https://www.youtube-nocookie.com/embed/D5ng5-1SB_Y?rel=0&playsinline=1';
 $hasVideo = trim($videoEmbedUrl) !== '';
 
 function sales_screenshot_src(array $item): string
